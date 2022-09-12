@@ -1,5 +1,6 @@
 # Python Imports
 import ctypes
+import json
 import os
 import shutil
 import time
@@ -55,12 +56,14 @@ class AMAPEngine:
 
         logging.info(f"Loading project configuration")
         # Configuration
+        self.configs = _configs
         self.project_id = _configs['project_id']
         self.project_name = _configs['project_name']
         self.batch_size = _configs['batch_size']
         self.embedding_dimensionality = _configs['dimensionality']
         self.source_directory = _configs['source_dir']
-        self.output_directory = _configs['result_dir']
+        self.output_segmentation_directory = _configs['result_segmentation_dir']
+        self.output_morphometry_directory = _configs['result_morphometry_dir']
         self.resource_alloc_value = _configs['resource_allocation']
         self.is_stacked = _configs['is_stacked']
         self.target_channel = _configs['target_channel']
@@ -93,8 +96,8 @@ class AMAPEngine:
         self.no_of_processed_tiles[0] = 0
         self.no_of_processed_tiles.release()
 
-        if not os.path.exists(self.output_directory):
-            os.mkdir(self.output_directory)
+        if not os.path.exists(self.output_segmentation_directory):
+            os.mkdir(self.output_segmentation_directory)
 
         if not os.path.exists(self.LOG_DIR):
             os.mkdir(self.LOG_DIR)
@@ -241,7 +244,7 @@ class AMAPEngine:
                                        args=(event_finished,))
         self.finished_events.append(event_finished)
         collector_process.start()
-        executor_logger.info(f"Collector process has been started.")
+        executor_logger.info(f"Collector process started.")
 
         executor_logger.info(f"No of clustering processes: {self.no_of_cluster_processes}.")
         for cluster_process_id in range(self.no_of_cluster_processes):
@@ -250,7 +253,7 @@ class AMAPEngine:
                                          args=(event_finished, cluster_process_id))
             self.finished_events.append(event_finished)
             cluster_process.start()
-            executor_logger.info(f"Clustering process no: {cluster_process_id} has been started.")
+            executor_logger.info(f"Clustering process no: {cluster_process_id} started.")
 
         executor_logger.info(f"No of tiling processes: {self.no_of_tile_processes}.")
         for tile_process_id in range(self.no_of_tile_processes):
@@ -259,12 +262,12 @@ class AMAPEngine:
                                         args=(event_finished, tile_process_id))
             self.finished_events.append(event_finished)
             tiling_process.start()
-            executor_logger.info(f"Tiling process no: {tile_process_id} has been started.")
+            executor_logger.info(f"Tiling process no: {tile_process_id} started.")
 
         inference_process = mp.Process(target=self.inference_procedure,
                                        args=(self.finished_events,))
         inference_process.start()
-        executor_logger.info(f"Inference process has been started.")
+        executor_logger.info(f"Inference process started.")
 
         executor_logger.info(f"Waiting for inference process to finish.")
         if inference_process:
@@ -277,6 +280,13 @@ class AMAPEngine:
         spent_time = self.end_time - self.start_time
         hours, remainder = divmod(spent_time, 3600)
         minutes, seconds = divmod(remainder, 60)
+
+        if self.proceed[0]:
+            self.configs['is_segmentation_finished'] = True
+            config_file_path = os.path.join(self.source_directory, "conf.json")
+            with open(config_file_path, 'w+') as file:
+                file.write(json.dumps(self.configs))
+
         executor_logger.info(f"Clustering finished in: {int(hours)}:{int(minutes)}:{int(seconds)}.")
 
     def collector_procedure(self, _event_finished):
@@ -371,7 +381,7 @@ class AMAPEngine:
                     filepath = self.dataset.image_files[image_id]
                     mask_inst = mask_img[0]
                     mask_sem = mask_img[1]
-                    sub_out_dir, fn_short = mkdirs(self.output_directory, filepath)
+                    sub_out_dir, fn_short = mkdirs(self.output_segmentation_directory, filepath)
 
                     np.save(os.path.join(sub_out_dir, "%s_pred.npy" % fn_short[:-4]), mask_img)
 

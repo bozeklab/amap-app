@@ -97,6 +97,7 @@ class Ui_MainWindow(object):
         self.label_image.setFrameShape(QFrame.Panel)
         self.label_image.setFrameShadow(QFrame.Plain)
         self.label_image.setPixmap(QPixmap(u"../../res/images/header.png"))
+        self.label_image.setScaledContents(True)
 
         self.gridLayout.addWidget(self.label_image, 1, 0, 1, 1)
 
@@ -160,8 +161,102 @@ class Ui_MainWindow(object):
         self.grid_project = QGridLayout()
         self.grid_project.setSpacing(6)
         self.grid_project.setObjectName(u"grid_project")
+        self.label_clustering_precision = QLabel(self.frame_projects)
+        self.label_clustering_precision.setObjectName(u"label_clustering_precision")
+        self.label_clustering_precision.setEnabled(False)
+
+        self.grid_project.addWidget(self.label_clustering_precision, 2, 0, 1, 1)
+
+        self.horizontal_result = QHBoxLayout()
+        self.horizontal_result.setObjectName(u"horizontal_result")
+        self.label_results = QLabel(self.frame_projects)
+        self.label_results.setObjectName(u"label_results")
+        self.label_results.setEnabled(False)
+        self.label_results.setLayoutDirection(Qt.LeftToRight)
+
+        self.horizontal_result.addWidget(self.label_results)
+
+        self.button_result_segmentation = QPushButton(self.frame_projects)
+        self.button_result_segmentation.setObjectName(u"button_result_segmentation")
+        self.button_result_segmentation.setEnabled(False)
+
+        self.horizontal_result.addWidget(self.button_result_segmentation)
+
+        self.button_result_morphometry = QPushButton(self.frame_projects)
+        self.button_result_morphometry.setObjectName(u"button_result_morphometry")
+        self.button_result_morphometry.setEnabled(False)
+
+        self.horizontal_result.addWidget(self.button_result_morphometry)
+
+        self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontal_result.addItem(self.horizontalSpacer_2)
+
+
+        self.grid_project.addLayout(self.horizontal_result, 3, 0, 1, 5)
+
+        self.label_resource_allocation = QLabel(self.frame_projects)
+        self.label_resource_allocation.setObjectName(u"label_resource_allocation")
+        self.label_resource_allocation.setEnabled(False)
+
+        self.grid_project.addWidget(self.label_resource_allocation, 0, 0, 1, 1)
+
+        self.slider_precision = QSlider(self.frame_projects)
+        self.slider_precision.setObjectName(u"slider_precision")
+        self.slider_precision.setEnabled(False)
+        self.slider_precision.setMaximum(4)
+        self.slider_precision.setValue(0)
+        self.slider_precision.setSliderPosition(0)
+        self.slider_precision.setOrientation(Qt.Horizontal)
+        self.slider_precision.setTickPosition(QSlider.TicksBothSides)
+
+        self.grid_project.addWidget(self.slider_precision, 2, 1, 1, 4)
+
+        self.slider_resource_allocation = QSlider(self.frame_projects)
+        self.slider_resource_allocation.setObjectName(u"slider_resource_allocation")
+        self.slider_resource_allocation.setEnabled(False)
+        self.slider_resource_allocation.setMaximum(3)
+        self.slider_resource_allocation.setValue(0)
+        self.slider_resource_allocation.setSliderPosition(0)
+        self.slider_resource_allocation.setOrientation(Qt.Horizontal)
+        self.slider_resource_allocation.setTickPosition(QSlider.TicksBothSides)
+
+        self.grid_project.addWidget(self.slider_resource_allocation, 0, 1, 1, 4)
+
+        self.grid_configs = QGridLayout()
+        self.grid_configs.setObjectName(u"grid_configs")
+        self.spin_channel = QSpinBox(self.frame_projects)
+        self.spin_channel.setObjectName(u"spin_channel")
+        self.spin_channel.setEnabled(False)
+        self.spin_channel.setMaximum(20)
+
+        self.grid_configs.addWidget(self.spin_channel, 0, 1, 1, 1)
+
+        self.label_channel = QLabel(self.frame_projects)
+        self.label_channel.setObjectName(u"label_channel")
+        self.label_channel.setEnabled(False)
+
+        self.grid_configs.addWidget(self.label_channel, 0, 0, 1, 1)
+
+        self.check_stacked = QCheckBox(self.frame_projects)
+        self.check_stacked.setObjectName(u"check_stacked")
+        self.check_stacked.setEnabled(False)
+
+        self.grid_configs.addWidget(self.check_stacked, 1, 0, 1, 1)
+
+
+        self.grid_project.addLayout(self.grid_configs, 4, 0, 1, 2)
+
+        self.horizontalSpacer = QSpacerItem(30, 20, QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+
+        self.grid_project.addItem(self.horizontalSpacer, 4, 2, 1, 1)
+
         self.horizontal_stop_start = QHBoxLayout()
         self.horizontal_stop_start.setObjectName(u"horizontal_stop_start")
+        self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+
+        self.horizontal_stop_start.addItem(self.horizontalSpacer_3)
+
         self.button_stop = QPushButton(self.frame_projects)
         self.button_stop.setObjectName(u"button_stop")
         self.button_stop.setEnabled(False)
@@ -175,84 +270,7 @@ class Ui_MainWindow(object):
         self.horizontal_stop_start.addWidget(self.button_start)
 
 
-        self.grid_project.addLayout(self.horizontal_stop_start, 4, 3, 1, 2)
-
-        self.horizontalSpacer = QSpacerItem(30, 20, QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
-
-        self.grid_project.addItem(self.horizontalSpacer, 4, 2, 1, 1)
-
-        self.horizontal_result = QHBoxLayout()
-        self.horizontal_result.setObjectName(u"horizontal_result")
-        self.button_results = QPushButton(self.frame_projects)
-        self.button_results.setObjectName(u"button_results")
-        self.button_results.setEnabled(False)
-
-        self.horizontal_result.addWidget(self.button_results)
-
-
-        self.grid_project.addLayout(self.horizontal_result, 5, 3, 1, 2)
-
-        self.grid_configs = QGridLayout()
-        self.grid_configs.setObjectName(u"grid_configs")
-        self.label_channel = QLabel(self.frame_projects)
-        self.label_channel.setObjectName(u"label_channel")
-        self.label_channel.setEnabled(False)
-
-        self.grid_configs.addWidget(self.label_channel, 0, 0, 1, 1)
-
-        self.check_stacked = QCheckBox(self.frame_projects)
-        self.check_stacked.setObjectName(u"check_stacked")
-        self.check_stacked.setEnabled(False)
-
-        self.grid_configs.addWidget(self.check_stacked, 1, 0, 1, 1)
-
-        self.spin_channel = QSpinBox(self.frame_projects)
-        self.spin_channel.setObjectName(u"spin_channel")
-        self.spin_channel.setEnabled(False)
-        self.spin_channel.setMaximum(20)
-
-        self.grid_configs.addWidget(self.spin_channel, 0, 1, 1, 1)
-
-
-        self.grid_project.addLayout(self.grid_configs, 4, 0, 1, 2)
-
-        self.verticalSpacer = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Preferred)
-
-        self.grid_project.addItem(self.verticalSpacer, 3, 0, 1, 1)
-
-        self.label_resource_allocation = QLabel(self.frame_projects)
-        self.label_resource_allocation.setObjectName(u"label_resource_allocation")
-        self.label_resource_allocation.setEnabled(False)
-
-        self.grid_project.addWidget(self.label_resource_allocation, 0, 0, 1, 1)
-
-        self.label_clustering_precision = QLabel(self.frame_projects)
-        self.label_clustering_precision.setObjectName(u"label_clustering_precision")
-        self.label_clustering_precision.setEnabled(False)
-
-        self.grid_project.addWidget(self.label_clustering_precision, 2, 0, 1, 1)
-
-        self.slider_resource_allocation = QSlider(self.frame_projects)
-        self.slider_resource_allocation.setObjectName(u"slider_resource_allocation")
-        self.slider_resource_allocation.setEnabled(False)
-        self.slider_resource_allocation.setMaximum(3)
-        self.slider_resource_allocation.setValue(0)
-        self.slider_resource_allocation.setSliderPosition(0)
-        self.slider_resource_allocation.setOrientation(Qt.Horizontal)
-        self.slider_resource_allocation.setTickPosition(QSlider.TicksBothSides)
-
-        self.grid_project.addWidget(self.slider_resource_allocation, 0, 1, 1, 4)
-
-        self.slider_precision = QSlider(self.frame_projects)
-        self.slider_precision.setObjectName(u"slider_precision")
-        self.slider_precision.setEnabled(False)
-        self.slider_precision.setMaximum(4)
-        self.slider_precision.setValue(0)
-        self.slider_precision.setSliderPosition(0)
-        self.slider_precision.setOrientation(Qt.Horizontal)
-        self.slider_precision.setTickPosition(QSlider.TicksBothSides)
-
-        self.grid_project.addWidget(self.slider_precision, 2, 1, 1, 4)
+        self.grid_project.addLayout(self.horizontal_stop_start, 5, 2, 1, 1)
 
 
         self.horizontalLayout_4.addLayout(self.grid_project)
@@ -286,12 +304,14 @@ class Ui_MainWindow(object):
         self.label_projects.setText(QCoreApplication.translate("MainWindow", u"Projects:", None))
         self.button_remove_project.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.button_add_project.setText(QCoreApplication.translate("MainWindow", u"Add", None))
-        self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
-        self.button_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
-        self.button_results.setText(QCoreApplication.translate("MainWindow", u"Results", None))
+        self.label_clustering_precision.setText(QCoreApplication.translate("MainWindow", u"Clustring Precision:", None))
+        self.label_results.setText(QCoreApplication.translate("MainWindow", u"Results:", None))
+        self.button_result_segmentation.setText(QCoreApplication.translate("MainWindow", u"Segmentation", None))
+        self.button_result_morphometry.setText(QCoreApplication.translate("MainWindow", u"Morphometry", None))
+        self.label_resource_allocation.setText(QCoreApplication.translate("MainWindow", u"Resource Allocation:", None))
         self.label_channel.setText(QCoreApplication.translate("MainWindow", u"Target channel", None))
         self.check_stacked.setText(QCoreApplication.translate("MainWindow", u"Stacked", None))
-        self.label_resource_allocation.setText(QCoreApplication.translate("MainWindow", u"Resource Allocation:", None))
-        self.label_clustering_precision.setText(QCoreApplication.translate("MainWindow", u"Clustring Precision:", None))
+        self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
+        self.button_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
     # retranslateUi
 

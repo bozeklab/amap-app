@@ -1,12 +1,20 @@
 # Python Imports
+import ctypes
+import json
+import logging
 import os
 import re
+import math
 
 # Library Imports
 import cv2
 import numpy as np
+import pandas as pd
+from skimage.morphology import skeletonize
+import torch.multiprocessing as mp
 
 # Local Imports
+from src.configs import LOG_START_PROC_SIGNATURE, LOG_LEVEL
 from src.utils import get_resolution
 
 
@@ -17,9 +25,121 @@ class AMAPMorphometry:
         self.JUNCTION_POINT = 3
         self.SLAB_POINT = 4
 
+        # Configuration
+        self.configs = _configs
+        self.project_id = _configs['project_id']
+        self.project_name = _configs['project_name']
+        self.source_directory = _configs['source_dir']
+        self.output_segmentation_directory = _configs['result_segmentation_dir']
+        self.output_morphometry_directory = _configs['result_morphometry_dir']
+
+        self.LOG_DIR = self.source_directory + '/log/'
+        self.morphometry_logger = self.get_logger("morphometry")
+
+        if not os.path.exists(self.output_morphometry_directory):
+            os.mkdir(self.output_morphometry_directory)
+
+        self.no_of_processed_images = mp.Array(ctypes.c_int64, 1)
+        self.no_of_images = mp.Array(ctypes.c_int64, 1)
+
+        self.no_of_images.acquire()
+        self.no_of_images[0] = 100
+        self.no_of_images.release()
+
+    def exec(self):
+        self.morphometry_logger.info(LOG_START_PROC_SIGNATURE)
+        self.morphometry_logger.info("Morphometry process started")
+
+        self.foot_processes_parameter_table(self.source_directory,
+                                            self.output_segmentation_directory,
+                                            self.output_morphometry_directory)
+
+        self.combine_FP_SD(self.output_morphometry_directory)
+        self.morphometry_logger.info("Morphometry process finished")
+
+        self.configs['is_morphometry_finished'] = True
+        config_file_path = os.path.join(self.source_directory, "conf.json")
+        with open(config_file_path, 'w+') as file:
+            file.write(json.dumps(self.configs))
+
     def skeleton_length(self, input_image, res):
         tagged_image = self.tag_image(input_image)
         return self.mark_trees(tagged_image, res)
+
+    def foot_processes_parameter_table(self, images_dir, prediction_dir, output_dir):
+        files = list(filter(lambda entry: re.match(r'(.+)_pred.npy', entry), os.listdir(prediction_dir)))
+        filenames = [re.match(r'(.+)_pred.npy', x).group(1) for x in files]
+        filenames.sort()
+        if not os.path.exists(output_dir):
+            os.mkdir(output_dir)
+
+        self.no_of_images.acquire()
+        self.no_of_images[0] = len(filenames)
+        self.no_of_images.release()
+
+        sd_grid_file = open(os.path.join(output_dir, "SD_length_grid_index.csv"), 'w')
+        try:
+            sd_grid_file.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
+                "file", "SD length", "grid crossings", "mean distance", "SD total length", "ROI total area"))
+
+            for i, filename in enumerate(filenames):
+
+                self.morphometry_logger.info(f"Saving file: {filename}")
+
+                self.no_of_processed_images.acquire()
+                self.no_of_processed_images[0] = i
+                self.no_of_processed_images.release()
+
+                predictions = np.load(os.path.join(prediction_dir, filename + "_pred.npy"))
+
+                instance_prediction = predictions[0, :, :]
+                values = np.unique(instance_prediction)
+                values = values[values != 0]
+                resolution = get_resolution(os.path.join(images_dir, filename + ".tif"), predictions.shape[1])
+                with open(os.path.join(output_dir, filename + "_fp_params.csv"), 'w') as csv_file:
+                    csv_file.write("Label\tArea\tPerim.\tCirc.\n")
+                    for value in values:
+                        is_value = instance_prediction == value
+                        per, area, circ = self.foot_process_parameters(is_value, resolution)
+                        csv_file.write("%i\t%.3f\t%.3f\t%.3f\n" % (value, area, per, circ))
+                    csv_file.close()
+
+                sd = predictions[1, :, :]
+                roi_mask, sd = self.get_ROI_from_predictions(predictions[1, :, :], sd.shape)
+
+                contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                roi_area = 0
+                for cnt in contours:
+                    roi_area += cv2.contourArea(cnt)
+
+                res = get_resolution(os.path.join(images_dir, filename + ".tif"), sd.shape[0])
+                _, distances = self.skeleton_length(sd, res)
+                total_sd_len = np.sum(distances)
+
+                total_roi_area = roi_area * res ** 2
+
+                sd_len = total_sd_len / total_roi_area
+                grid_points, grid_index = self.calculate_grid(sd, res)
+
+                sd_grid_file.write(
+                    f"%s\t%.3f\t%i\t%.3f\t%.3f\t%.3f\n" % (
+                        filename, sd_len, grid_points, grid_index, total_sd_len, total_roi_area))
+        finally:
+            sd_grid_file.close()
+
+    @staticmethod
+    def foot_process_parameters(region, res):
+        region = region.astype(np.uint8)
+        contours, hier = cv2.findContours(region, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cnt = contours[0]
+        area = cv2.contourArea(cnt) * res ** 2
+        per = cv2.arcLength(cnt, True) * res
+        if per == 0:
+            return -1, -1, -1
+        circ = (4 * math.pi * area) / (per ** 2)
+        # if circ > 1:
+        #     print(circ)
+        return per, area, circ
 
     @staticmethod
     def get_number_of_neighbors(image, x, y):
@@ -168,10 +288,11 @@ class AMAPMorphometry:
                 all_ds = np.append(all_ds, ds)
         return all_pts, np.mean(all_ds)
 
-    def get_ROI_from_pred(self, preds, img_sh):
+    @staticmethod
+    def get_ROI_from_predictions(predictions, img_sh):
         MIN_AREA = 500
-        preds = cv2.resize(preds, img_sh, interpolation=cv2.INTER_NEAREST)
-        all_pred = preds > 0
+        predictions = cv2.resize(predictions, img_sh, interpolation=cv2.INTER_NEAREST)
+        all_pred = predictions > 0
         all_pred = all_pred.astype(np.uint8)
 
         contours, _ = cv2.findContours(all_pred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
@@ -192,63 +313,42 @@ class AMAPMorphometry:
         mask_roi = cv2.erode(mask_roi, kernel, iterations=10)
         mask_roi[mask_orig == 1] = 1
 
-        sd = preds.copy()
+        sd = predictions.copy()
         sd[sd == 1] = 0
         sd[sd == 2] = 1
         sd[mask_roi == 0] = 0
-        sd = self.skeletonize(sd)
+        sd = skeletonize(sd)
         sd = sd.astype(np.uint8)
 
         return mask_roi, sd
 
-    def sd_length_grid_index(self, pred_dr="../amap_res", img_dr="../samples", out_dr="../amap_res/morphometry"):
-        fls = list(filter(lambda x: re.match(r'(.+)_pred.npy', x), os.listdir(pred_dr)))
-        prefs = [re.match(r'(.+)_pred.npy', x).group(1) for x in fls]
-        f = open(os.path.join(out_dr, "SD_length_grid_index.xls"), 'w')
-        f.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
-            "file", "SD length", "grid crossings", "mean distance", "SD total length", "ROI total area"))
-        for i, pref in enumerate(prefs):
-            preds = np.load(os.path.join(pred_dr, pref + "_pred.npy"))
-            sd = preds[1, :, :]
-            roi_mask, sd = self.get_ROI_from_pred(preds[1, :, :], sd.shape)
-
-            contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-            roi_area = 0
-            for cnt in contours:
-                roi_area += cv2.contourArea(cnt)
-
-            res = get_resolution(os.path.join(img_dr, pref + ".tif"), sd.shape[0])
-            _, distances = self.skeleton_length(sd, res)
-            total_sd_len = np.sum(distances)
-
-            total_roi_area = roi_area * res ** 2
-
-            sd_len = total_sd_len / total_roi_area
-            grid_points, grid_index = self.calculate_grid(sd, res)
-
-            f.write(
-                f"%s\t%.3f\t%i\t%.3f\t%.3f\t%.3f\n" % (
-                    pref, sd_len, grid_points, grid_index, total_sd_len, total_roi_area))
-        f.close()
-
     @staticmethod
-    def combine_FP_SD(param_dr="../amap_res/morphometry"):
-        t = pd.read_table(os.path.join(param_dr, "SD_length_grid_index.xls"))
-        fp_area = np.zeros((t.shape[0]))
-        fp_perim = np.zeros((t.shape[0]))
-        fp_circ = np.zeros((t.shape[0]))
+    def combine_FP_SD(param_dr):
+        t = pd.read_table(os.path.join(param_dr, "SD_length_grid_index.csv"))
+        foot_process_area = np.zeros((t.shape[0]))
+        foot_process_perim = np.zeros((t.shape[0]))
+        foot_process_circ = np.zeros((t.shape[0]))
         for i in range(t.shape[0]):
             fl = t["file"][i]
-            fp_t = np.loadtxt(os.path.join(param_dr, fl + "_fp_params.xls"), delimiter="\t", skiprows=1, ndmin=2)
+            fp_t = np.loadtxt(os.path.join(param_dr, fl + "_fp_params.csv"), delimiter="\t", skiprows=1, ndmin=2)
             if fp_t.size > 0:
-                fp_area[i] = np.mean(fp_t[:, 1])
-                fp_perim[i] = np.mean(fp_t[:, 2])
-                fp_circ[i] = np.mean(fp_t[:, 3])
+                foot_process_area[i] = np.mean(fp_t[:, 1])
+                foot_process_perim[i] = np.mean(fp_t[:, 2])
+                foot_process_circ[i] = np.mean(fp_t[:, 3])
             else:
-                fp_area[i] = 0
-                fp_perim[i] = 0
-                fp_circ[i] = 0
-        t["FP Area"] = fp_area
-        t["FP Perim."] = fp_perim
-        t["FP Circ."] = fp_circ
-        t.to_csv(os.path.join(param_dr, "all_params.xls"), sep="\t")
+                foot_process_area[i] = 0
+                foot_process_perim[i] = 0
+                foot_process_circ[i] = 0
+        t["FP Area"] = foot_process_area
+        t["FP Perim."] = foot_process_perim
+        t["FP Circ."] = foot_process_circ
+        t.to_csv(os.path.join(param_dr, "all_params.csv"), sep="\t")
+
+    def get_logger(self, _process_name):
+        logger = logging.getLogger(f"{self.project_id}-{_process_name}")
+        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
+        stream_handler = logging.FileHandler(f"{self.LOG_DIR}/{_process_name}.log")
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+        logger.setLevel(LOG_LEVEL)
+        return logger

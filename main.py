@@ -8,7 +8,7 @@ from PySide6 import QtWidgets
 from PySide6.QtGui import QFontDatabase
 
 # Local Imports
-from src.configs import LOG_START_APP_SIGNATURE
+from src.configs import LOG_START_APP_SIGNATURE, LOG_LEVEL
 from src.ui.main_window import MainWindow
 from src.utils import create_dark_palette, create_projects_dir
 
@@ -17,7 +17,7 @@ if __name__ == '__main__':
     warnings.filterwarnings("ignore")
 
     logging.basicConfig(
-        level=logging.INFO,
+        level=LOG_LEVEL,
         format="%(asctime)s [%(levelname)s] %(message)s",
         handlers=[
             logging.FileHandler("amap.log"),

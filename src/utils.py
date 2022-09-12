@@ -1,17 +1,19 @@
 # Python Imports
-import os
-import re
 import colorsys
+import os
 import random
-from PIL import Image
+import re
+import subprocess
+import sys
 
 # Library Imports
 import numpy as np
 import tifffile
+from PIL import Image
 from PySide6 import QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette, QColor, QFont
-from PySide6.QtWidgets import QApplication, QProgressDialog, QProgressBar, QMessageBox
+from PySide6.QtWidgets import QApplication, QProgressDialog, QMessageBox
 
 # Local Imports
 from src.configs import PROJECT_DIR
@@ -219,3 +221,12 @@ def plot_labels(_image, _instance_mask, _semantic_mask, ncomp, _output_file):
     background = Image.fromarray(background * 255).convert("RGBA")
 
     Image.alpha_composite(background, instance_layer).save(_output_file)
+
+
+def open_dir_in_browser(_path):
+    if sys.platform == 'win32':
+        os.startfile(_path)
+    elif sys.platform == 'darwin':
+        subprocess.call(['open', _path])
+    else:
+        subprocess.call(['xdg-open', _path])

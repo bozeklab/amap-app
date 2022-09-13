@@ -16,8 +16,9 @@ MAX_N_INST = 350
 
 
 class PredictionDataset(Dataset):
-    def __init__(self, _source_directory, _target_resolution, _sample_dimension, _steps):
+    def __init__(self, _configs, _source_directory, _target_resolution, _sample_dimension, _steps):
 
+        self.configs = _configs
         self.source_directory = _source_directory
 
         self.dimension = _sample_dimension
@@ -55,12 +56,21 @@ class PredictionDataset(Dataset):
 
     def read_file(self, fn):
         img = tifffile.imread(os.path.join(self.source_directory, fn))
-        if len(img.shape) > 3:
-            img = np.max(img, axis=1)
-        if (len(img.shape) == 3) and (img.shape[0] > 2):
-            img = np.max(img, axis=0)
+
+        # Choosing the channel and max projecting if needed
+
+        if self.configs['is_stacked']:
+            if len(img.shape) > 3:
+                if img.shape[0] == 2:
+                    img = np.max(img, axis=1)
+                else:
+                    img = np.max(img, axis=0)
+            if len(img.shape) == 3:
+                img = np.max(img, axis=0)
+
         if len(img.shape) > 2:
-            img = img[0]
+            img = img[self.configs['target_channel']]
+
         img = Image.fromarray(img)
         w, h = img.size
         res = get_resolution(os.path.join(self.source_directory, fn), w)

@@ -181,7 +181,7 @@ def analyze_tiff_files(_path):
             # Based on the reviewed data samples, if number of channels is 2, meaning "tiff_image.shape[1][1] == 2"
             # Only the first channel is usable, and the images are not stacked.
             # If no of channels is bigger than 2, the tiff image contains multiple stacked images
-            if tiff_rank == 4 and tiff_image.shape[1] > 2:
+            if tiff_rank == 4 and (tiff_image.shape[1] > 2 or tiff_image.shape[0] > 2):
                 is_stacked = True
             elif tiff_rank == 3 and tiff_image.shape[0] > 2:
                 is_stacked = True

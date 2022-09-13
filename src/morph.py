@@ -29,11 +29,13 @@ class AMAPMorphometry:
         self.configs = _configs
         self.project_id = _configs['project_id']
         self.project_name = _configs['project_name']
+        self.base_directory = _configs['base_dir']
         self.source_directory = _configs['source_dir']
+        self.npy_directory = _configs['npy_dir']
         self.output_segmentation_directory = _configs['result_segmentation_dir']
         self.output_morphometry_directory = _configs['result_morphometry_dir']
 
-        self.LOG_DIR = self.source_directory + '/log/'
+        self.LOG_DIR = self.base_directory + '/log/'
         self.morphometry_logger = self.get_logger("morphometry")
 
         if not os.path.exists(self.output_morphometry_directory):
@@ -51,14 +53,14 @@ class AMAPMorphometry:
         self.morphometry_logger.info("Morphometry process started")
 
         self.foot_processes_parameter_table(self.source_directory,
-                                            self.output_segmentation_directory,
+                                            self.npy_directory,
                                             self.output_morphometry_directory)
 
         self.combine_FP_SD(self.output_morphometry_directory)
         self.morphometry_logger.info("Morphometry process finished")
 
         self.configs['is_morphometry_finished'] = True
-        config_file_path = os.path.join(self.source_directory, "conf.json")
+        config_file_path = os.path.join(self.base_directory, "conf.json")
         with open(config_file_path, 'w+') as file:
             file.write(json.dumps(self.configs))
 

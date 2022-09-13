@@ -275,7 +275,7 @@ class MainWindow(QMainWindow):
                         percentage = 99
                     self.progress_dialog.setValue(percentage)
                 elif self.morphometry is not None:
-                    percentage = (self.morphometry.no_of_processed_images[0] + 1) / self.morphometry.no_of_images[0] * 100
+                    percentage = (self.morphometry.no_of_processed_images[0]) / self.morphometry.no_of_images[0] * 100
                     if percentage > 99:
                         percentage = 99
                     self.progress_dialog.setValue(percentage)
@@ -387,7 +387,7 @@ class MainWindow(QMainWindow):
             return
 
         # Copying the selected directory and images to the project
-        destination_directory = f"{os.getcwd()}/{PROJECT_DIR}/{selected_path.name}"
+        destination_directory = f"{os.getcwd()}/{PROJECT_DIR}/{selected_path.name}/"
 
         progressDialog = create_progress_dialog(f'Creating project "{selected_path.name}"', 'Please wait', self)
         progressDialog.show()
@@ -407,19 +407,25 @@ class MainWindow(QMainWindow):
             return
 
         os.mkdir(destination_directory)
+
+        images_directory = os.path.join(destination_directory, 'images/')
+        os.mkdir(images_directory)
+
         for tiff_image in tiff_files:
             # Prevents UI freeze
             QApplication.processEvents()
 
             full_name = os.path.join(selected_directory, tiff_image)
             if os.path.isfile(full_name):
-                shutil.copy(full_name, destination_directory)
+                shutil.copy(full_name, images_directory)
 
         # Saving the configuration file into the project directory (Do not confuse with 'Projects' dir)
         project_configuration = {
             "project_id": f"{uuid.uuid4()}",
             "project_name": f"{selected_path.name}",
-            "source_dir": f"./{PROJECT_DIR}/{selected_path.name}/",
+            "base_dir": f"./{PROJECT_DIR}/{selected_path.name}/",
+            "source_dir": f"./{PROJECT_DIR}/{selected_path.name}/images/",
+            "npy_dir": f"./{PROJECT_DIR}/{selected_path.name}/npy/",
             "result_segmentation_dir": f"./{PROJECT_DIR}/{selected_path.name}/segmentation/",
             "result_morphometry_dir": f"./{PROJECT_DIR}/{selected_path.name}/morphometry/",
             "resource_allocation": 3,

@@ -61,8 +61,10 @@ class AMAPEngine:
         self.project_name = _configs['project_name']
         self.batch_size = _configs['batch_size']
         self.embedding_dimensionality = _configs['dimensionality']
+        self.base_directory = _configs['base_dir']
         self.source_directory = _configs['source_dir']
         self.output_segmentation_directory = _configs['result_segmentation_dir']
+        self.output_npy_directory = _configs['npy_dir']
         self.output_morphometry_directory = _configs['result_morphometry_dir']
         self.resource_alloc_value = _configs['resource_allocation']
         self.is_stacked = _configs['is_stacked']
@@ -76,8 +78,8 @@ class AMAPEngine:
         self.SHARED_MEMORY_SIZE = 20
         self.MIN_PIXELS = 10
         self.BICO_DIR = 'res/bico/'
-        self.TEMP_DIR = self.source_directory + '/temp/'
-        self.LOG_DIR = self.source_directory + '/log/'
+        self.TEMP_DIR = self.base_directory + '/temp/'
+        self.LOG_DIR = self.base_directory + '/log/'
         self.CC_SCALE = 4
 
         self.no_of_tile_processes, self.no_of_cluster_processes = \
@@ -99,6 +101,9 @@ class AMAPEngine:
         if not os.path.exists(self.output_segmentation_directory):
             os.mkdir(self.output_segmentation_directory)
 
+        if not os.path.exists(self.output_npy_directory):
+            os.mkdir(self.output_npy_directory)
+
         if not os.path.exists(self.LOG_DIR):
             os.mkdir(self.LOG_DIR)
 
@@ -112,7 +117,8 @@ class AMAPEngine:
 
         logging.info(f"Creating the dataset from images.")
         # Creating the dataset
-        self.dataset = PredictionDataset(_source_directory=self.source_directory,
+        self.dataset = PredictionDataset(_configs=self.configs,
+                                         _source_directory=self.source_directory,
                                          _target_resolution=self.TARGET_RESOLUTION,
                                          _sample_dimension=self.SAMPLE_SIZE,
                                          _steps=self.DATASET_STEPS)
@@ -283,7 +289,7 @@ class AMAPEngine:
 
         if self.proceed[0]:
             self.configs['is_segmentation_finished'] = True
-            config_file_path = os.path.join(self.source_directory, "conf.json")
+            config_file_path = os.path.join(self.base_directory, "conf.json")
             with open(config_file_path, 'w+') as file:
                 file.write(json.dumps(self.configs))
 
@@ -381,9 +387,11 @@ class AMAPEngine:
                     filepath = self.dataset.image_files[image_id]
                     mask_inst = mask_img[0]
                     mask_sem = mask_img[1]
+
+                    npy_out_dir, _ = mkdirs(self.output_npy_directory, filepath)
                     sub_out_dir, fn_short = mkdirs(self.output_segmentation_directory, filepath)
 
-                    np.save(os.path.join(sub_out_dir, "%s_pred.npy" % fn_short[:-4]), mask_img)
+                    np.save(os.path.join(npy_out_dir, "%s_pred.npy" % fn_short[:-4]), mask_img)
 
                     result_file_name = os.path.join(sub_out_dir, "%s_pred.png" % fn_short[:-4])
                     collector_logger.debug(f"Saving the result to: {result_file_name}")

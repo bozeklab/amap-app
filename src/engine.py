@@ -615,11 +615,11 @@ class AMAPEngine:
 
                 instance_prediction = np.copy(self.instance_predictions_sh_memory[shared_memory_index][1])
 
-                is_footProcessing = semantic_mask == 1
+                is_footProcess = semantic_mask == 1
 
                 tiling_logger.debug(f"Finding the connected components.")
                 connectedComponents_number, connectedComponents_image \
-                    = cv2.connectedComponents(is_footProcessing.astype(np.uint8))
+                    = cv2.connectedComponents(is_footProcess.astype(np.uint8))
 
                 ind_sb, sb = self.is_small_on_border(connectedComponents_number, connectedComponents_image)
                 semantic_mask[sb] = 0
@@ -644,12 +644,12 @@ class AMAPEngine:
                                   connectedComponents_image)
                         self.collector_queue.put(shared_memory_index)
                     else:
-                        is_footProcessing = semantic_mask == 1
-                        ccs = connectedComponents_image[is_footProcessing]
+                        is_footProcess = semantic_mask == 1
+                        ccs = connectedComponents_image[is_footProcess]
 
                         tiling_logger.debug(f"Adding one hot ccs to the embeddings.")
                         one_hot_ccs = np.eye(connectedComponents_number)[ccs - 1] * self.CC_SCALE
-                        embeddings = instance_prediction[:, is_footProcessing].transpose(1, 0)
+                        embeddings = instance_prediction[:, is_footProcess].transpose(1, 0)
                         embeddings = np.append(one_hot_ccs, embeddings, axis=1)
 
                         cc_fl = os.path.join(self.TEMP_DIR, "%i_cc.txt" % shared_memory_index)
@@ -699,7 +699,7 @@ class AMAPEngine:
                             ranks[n_obj - n_min, :] = [n_obj, silhouette]
 
                         tiling_logger.debug(f"Choosing the best cluster.")
-                        pred_inst, n_pred = self.pick_cluster(ranks, shared_memory_index, is_footProcessing)
+                        pred_inst, n_pred = self.pick_cluster(ranks, shared_memory_index, is_footProcess)
 
                         # save to output shared array
                         tiling_logger.debug(f"Saving back instance mask to the shared memory.")

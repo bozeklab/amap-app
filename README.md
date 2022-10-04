@@ -4,7 +4,7 @@ AMAP is a desktop application that performs [segmentation and morphometry quanti
 
 ![AMAP Results](res/images/header.png)
 
-This application is developed based on [AMAP](https://github.com/bozeklab/amap) repositery.
+This application is developed based on [AMAP](https://github.com/bozeklab/amap) repository.
 
 ### Requirements
 

@@ -1,12 +1,12 @@
 # Python Imports
-import warnings
 import logging
-import sys
 import os
+import sys
 import traceback
+import warnings
 
 # Library Imports
-from PySide6 import QtWidgets, QtGui
+from PySide6 import QtWidgets
 from PySide6.QtGui import QFontDatabase
 from PySide6.QtWidgets import QMessageBox
 
@@ -38,7 +38,7 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     sys.exit(1)
 
 
-# install handler for exceptions
+# Install handler for exceptions
 sys.excepthook = handle_exception
 
 if __name__ == '__main__':

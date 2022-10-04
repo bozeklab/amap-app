@@ -14,7 +14,7 @@ AMAP is implemented in Python 3 and tested in Linux using Python 3.7 and 3.10. A
 * [Pytorch](https://pytorch.org/) is used for training and inference of deep learning models.
 * [tifffile](https://pypi.org/project/tifffile/) is used to read data samples in tiff format
 * [scikit-learn](https://scikit-learn.org/stable/), [OpenCV](https://pypi.org/project/opencv-python/), and [NumPy](https://numpy.org/) are used for various image processing and machine learning tasks.
-* [BICO](https://ls2-www.cs.tu-dortmund.de/grav/en/bico) is a fast and efficient kmeans algorithm implemented in C++ used for clustering. It is used as a [separate executable](.res/bico/) and is called by AMAP application.
+* [BICO](https://ls2-www.cs.tu-dortmund.de/grav/en/bico) is a fast and efficient kmeans algorithm implemented in C++ used for clustering. It is used as a [separate executable](./res/bico/) and is used by AMAP application.
 
 ### Installation
 

@@ -22,6 +22,11 @@ AMAP application targeted to support Linux, macOS, and Windows. But platform-dep
 
 Some virtualization software is needed to use the VM. The import steps are shown below for VirtualBox. Therefore, please install Virtual Box before proceeding. If you are using other virtualization software, the ova image can easily be imported into other virtualization solutions as well.
 
+#### Download the ova image
+
+https://drive.google.com/file/d/1Py-gcn51LvEtZHRe7YlsqhLK2VyIaIQa/view?usp=sharing
+
+
 #### Import the ova image into virtual box
 <img src="res/install/Step-01.png" width="1024">
 

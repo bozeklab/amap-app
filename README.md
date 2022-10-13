@@ -75,7 +75,7 @@ Now you can transfer files between host and the VM, Alternatively you can use an
 
 ### Using AMAP
 
-AMAP application processes images in batches in the form of projects. A project is a batch of images combined with certain configurations. All images in a project must have the same order of dimensionality. At the current state AMAP only supports tiff files, therefore to create a project:
+AMAP application processes images in batches. A project is a batch of images combined with certain configurations. All images in a project must have the same order of dimensionality. At the current state AMAP only supports tiff files, therefore to create a project:
 * Click on the "Add Project" button
 * Select the directory containing the tiff files
 * Configure the project

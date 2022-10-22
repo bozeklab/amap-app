@@ -24,7 +24,7 @@ Some virtualization software is needed to use the VM. The import steps are shown
 
 #### Download the ova image
 
-https://drive.google.com/file/d/1Py-gcn51LvEtZHRe7YlsqhLK2VyIaIQa/view?usp=sharing
+https://mega.nz/file/MCMmjJDA#S5sRhK5HVEpe8UrrVyeVe8WJJVLrv8q9JfNk4J1ECXc
 
 
 #### Import the ova image into virtual box
@@ -82,6 +82,6 @@ AMAP application processes images in batches. A project is a batch of images com
 	* Resource Allocation: Determines how much of your computer resources will be allocated to the processing. The project finishes faster, but you might not be able to use your computer for other tasks if you choose high values.
 	* Clustering Precision: AMAP uses scikit learn implementation of silhouette score for choosing the best number of clusters, which is very CPU intensitive. Reducing the sample size while calculating the silhouette score, accelerates the process by an order of magnitude without having serious effects on the results. Choosing high values will result in long processing times.
 	* Target Channel: AMAP tries to automatically detect the target channel in the input images. Change this value when the automatic detection is wrong. 	
-	* Stacked Checkbox: Determines whether the input images are an array of stacked or not. If they are, AMAP will use a max projection of all stacks. Change this value in the case of wrong detection.
-* Click on the "Start" button and wait for the processing to be finished
-* Open Segmentation and Morphometry directories to use the related buttons
+	* Stacked Checkbox: Determines whether the input images are an array of stacked images or not. If they are, AMAP will use a max projection of them. Change this value in the case of wrong detection.
+* Click on the "Start" button and wait for the processing to finishes.
+* Open Segmentation and Morphometry directories using the related buttons.

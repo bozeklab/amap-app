@@ -16,7 +16,7 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QPushButton, QFileDialog, QMe
 
 # Local Imports
 from src.configs import PROJECT_DIR, HEADER_IMAGE, APP_ICON
-from src.engine import AMAPEngine
+from src.nengine import AMAPEngine
 from src.morph import AMAPMorphometry
 from src.ui.ui_mainwindow import Ui_MainWindow
 from src.utils import filter_tiff_files, analyze_tiff_files, create_progress_dialog, create_message_box, \
@@ -235,7 +235,7 @@ class MainWindow(QMainWindow):
     def stop_project_click(self):
         self.button_stop.setEnabled(False)
         self.engine.cancel_processing()
-        self.progress_dialog.setLabelText(f'Cancelling... it will take some time.')
+        self.progress_dialog.setLabelText('Cancelling... it will take some time.')
         self.engine = None
 
     def start_project_click(self):
@@ -245,7 +245,7 @@ class MainWindow(QMainWindow):
         self.button_add_project.setEnabled(False)
         self.button_stop.setEnabled(True)
 
-        self.progress_dialog = create_progress_dialog(f'Segmentation', 'Please wait', self)
+        self.progress_dialog = create_progress_dialog('Segmentation', 'Please wait', self)
 
         project_name = self.list_projects.currentItem().text()
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
@@ -253,8 +253,9 @@ class MainWindow(QMainWindow):
 
         if not project_configs['is_segmentation_finished']:
             self.engine = AMAPEngine(project_configs)
-            self.project_process = mp.Process(target=self.start_project_segmentation)
-            self.project_process.start()
+            # self.project_process = mp.Process(target=self.start_project_segmentation)
+            # self.project_process.start()
+            self.start_project_segmentation()
 
         QtCore.QTimer.singleShot(500, self.check_project_status)
 
@@ -269,7 +270,7 @@ class MainWindow(QMainWindow):
         try:
             if self.project_process is not None and self.project_process.is_alive():
                 if self.engine is not None:
-                    percentage = self.engine.no_of_processed_tiles[0] / len(self.engine.dataset) * 100
+                    percentage = 0 / len(self.engine.dataset) * 100
                     # A bug in Qt prevent us to set the percentage to 100
                     if percentage > 99:
                         percentage = 99
@@ -291,7 +292,7 @@ class MainWindow(QMainWindow):
                         self.button_stop.setEnabled(False)
                         self.morphometry = AMAPMorphometry(project_configs)
                         self.project_process = mp.Process(target=self.start_project_morphometry)
-                        self.progress_dialog.setLabelText(f'Morphometry')
+                        self.progress_dialog.setLabelText('Morphometry')
                         self.project_process.start()
 
                 else:

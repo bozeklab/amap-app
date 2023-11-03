@@ -86,6 +86,10 @@ class PredictionDataset(Dataset):
         img = np.expand_dims(img.astype(np.float32), 0)
         return img
 
+    def image_shape_by_id(self, _image_id):
+        fn = self.image_files[_image_id]
+        return self.imgs[fn].shape
+
     def __getitem__(self, i):
         file_i = np.min(np.where(self.per_img_cumsum > i)[0])
 

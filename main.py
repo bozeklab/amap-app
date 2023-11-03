@@ -77,5 +77,3 @@ if __name__ == '__main__':
 
     logging.info("Executing the Qt app")
     sys.exit(app.exec())
-
-

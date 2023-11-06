@@ -124,7 +124,7 @@ class AMAPMorphometry:
                 grid_points, grid_index = self.calculate_grid(sd, res)
 
                 sd_grid_file.write(
-                    f"%s\t%.3f\t%i\t%.3f\t%.3f\t%.3f\n" % (
+                     "%s\t%.3f\t%i\t%.3f\t%.3f\t%.3f\n" % (
                         filename, sd_len, grid_points, grid_index, total_sd_len, total_roi_area))
         finally:
             sd_grid_file.close()

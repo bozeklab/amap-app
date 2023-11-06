@@ -253,9 +253,8 @@ class MainWindow(QMainWindow):
 
         if not project_configs['is_segmentation_finished']:
             self.engine = AMAPEngine(project_configs)
-            # self.project_process = mp.Process(target=self.start_project_segmentation)
-            # self.project_process.start()
-            self.start_project_segmentation()
+            self.project_process = mp.Process(target=self.start_project_segmentation)
+            self.project_process.start()
 
         QtCore.QTimer.singleShot(500, self.check_project_status)
 
@@ -270,7 +269,7 @@ class MainWindow(QMainWindow):
         try:
             if self.project_process is not None and self.project_process.is_alive():
                 if self.engine is not None:
-                    percentage = 0 / len(self.engine.dataset) * 100
+                    percentage = self.engine.processed_tiles.value / len(self.engine.dataset) * 100
                     # A bug in Qt prevent us to set the percentage to 100
                     if percentage > 99:
                         percentage = 99

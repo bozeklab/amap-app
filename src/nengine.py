@@ -14,6 +14,7 @@ import GPUtil
 import torch
 import torch.nn.functional as fn
 from torch.utils.data import DataLoader
+import torch,multiprocessing as mp
 from PIL import Image
 
 # Local Imports
@@ -68,7 +69,7 @@ class AMAPEngine:
         self.TARGET_RESOLUTION = 0.022724609375
         self.SAMPLE_SIZE = 384
         self.DATASET_STEPS = 128
-        self.MIN_PIXELS = 10
+        self.MIN_PIXELS = 20
         self.CC_SCALE = 4
         self.TEMP_DIR = self.base_directory + '/temp/'
         self.LOG_DIR = self.base_directory + '/log/'
@@ -77,6 +78,7 @@ class AMAPEngine:
         self.patches = []
         self.semantic_mask = None
         self.instance_mask = None
+        self.processed_tiles = mp.Value('d', 0.0)
 
         if not os.path.exists(self.output_segmentation_directory):
             os.mkdir(self.output_segmentation_directory)
@@ -187,19 +189,42 @@ class AMAPEngine:
                 semantic_predictions = fn.softmax(semantic_predictions, dim=1)
 
                 for index, prediction in enumerate(semantic_predictions):
+                    with self.processed_tiles.get_lock():
+                        self.processed_tiles.value += 1.0
+
+                    end_condition = (batch_i == len(loader)-1) and (index == len(semantic_predictions)-1)
                     offset = offsets[index]
-                    if offset[0] != self.image_id:
+                    if offset[0] != self.image_id or end_condition:
                         self.merge_patches()
-                        seg = Image.fromarray((self.semantic_mask * 60).astype(np.uint8))
-                        seg.save("./seg.png")
+
+                        image_size = self.dataset.image_shape_by_id(self.image_id)[1:]
+                        image_size = (2, *image_size)
+                        mask_img = np.zeros(image_size)
+                        mask_img[0] = self.semantic_mask
 
                         cc_mask = self.semantic_mask == 2
                         self.semantic_mask[cc_mask] = 0
 
-                        cc_number, cc_objects = cv2.connectedComponents(cc_mask.astype(np.uint8))
-                        cc_number, cc_objects = self.is_small_on_border(cc_number, cc_objects)
-                        # seg = Image.fromarray((self.semantic_mask * 60).astype(np.uint8))
-                        # seg.save("./seg.png")
+                        cc_number, cc_objects = cv2.connectedComponents(self.semantic_mask.astype(np.uint8))
+                        self.remove_small_and_on_border(cc_number, cc_objects)
+
+                        mask_img[1] = cc_objects
+
+                        filepath = self.dataset.image_files[self.image_id]
+
+                        npy_out_dir, _ = mkdirs(self.output_npy_directory, filepath)
+                        sub_out_dir, fn_short = mkdirs(self.output_segmentation_directory, filepath)
+
+                        np.save(os.path.join(npy_out_dir, "%s_pred.npy" % fn_short[:-4]), mask_img)
+
+                        result_file_name = os.path.join(sub_out_dir, "%s_pred.png" % fn_short[:-4])
+
+                        plot_labels(self.dataset.read_file(filepath),
+                                    mask_img[1],
+                                    mask_img[0],
+                                    cc_number,
+                                    result_file_name)
+
                         self.patches.clear()
                         self.image_id = offset[0]
 
@@ -209,26 +234,20 @@ class AMAPEngine:
 
         inference_logger.info("Finished, Exiting...")
 
-    def is_small_on_border(self, _connected_components_number, _image):
+    def remove_small_and_on_border(self, _cc_number, _image):
         on_border = np.unique(np.concatenate(
             [np.unique(_image[:, 0]),
              np.unique(_image[0, :]),
              np.unique(_image[:, -1]),
              np.unique(_image[-1, :])]))
         on_border = on_border[on_border != 0]
-        ind = np.zeros(_connected_components_number, dtype=bool)
-        res = np.zeros(_image.shape, dtype=bool)
         for i in on_border:
-            res[_image == i] = True
-            ind[i] = True
+            _image[_image == i] = 0
 
-        for i in range(1, _connected_components_number):
+        for i in range(1, _cc_number):
             is_i = _image == i
             if np.sum(is_i) < self.MIN_PIXELS:
-                res[_image == i] = True
-                ind[i] = True
-
-        return ind, res
+                _image[_image == i] = 0
 
     def get_logger(self, _process_name):
         logger = logging.getLogger(f"{self.project_id}-{_process_name}")

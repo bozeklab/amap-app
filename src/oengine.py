@@ -16,7 +16,6 @@ import torch.multiprocessing as mp
 import torch.nn.functional as fn
 from sklearn.metrics import silhouette_score
 from torch.utils.data import DataLoader
-from pudb.remote import set_trace
 
 # Local Imports
 from src.configs import LOG_LEVEL, LOG_START_PROC_SIGNATURE
@@ -87,14 +86,14 @@ class AMAPEngine:
             self.resource_value_to_process_no(self.resource_alloc_value)
 
         # Process IDs
-        self.exec_id = mp.Value(ctypes.c_int64, 0)
-        self.collector_id = mp.Value(ctypes.c_int64, 0)
-        self.inference_id = mp.Value(ctypes.c_int64, 0)
+        self.exec_id = mp.Array(ctypes.c_int64, 1)
+        self.collector_id = mp.Array(ctypes.c_int64, 1)
+        self.inference_id = mp.Array(ctypes.c_int64, 1)
         self.clustering_ids = mp.Array(ctypes.c_int64, self.no_of_cluster_processes)
         self.tiling_ids = mp.Array(ctypes.c_int64, self.no_of_tile_processes)
 
         # Processed tiles are needed to calculate completion percentage
-        self.no_of_processed_tiles = mp.Value(ctypes.c_int64, 0)
+        self.processed_tiles = mp.Value('d', 0.0)
 
         if not os.path.exists(self.output_segmentation_directory):
             os.mkdir(self.output_segmentation_directory)
@@ -125,7 +124,7 @@ class AMAPEngine:
         self.start_time = None
         self.end_time = None
 
-        logging.info("Preparing shared memory arrays")
+        logging.info(f"Preparing shared memory arrays")
 
         # Shared Memory for Multi-Processing #
 
@@ -193,7 +192,7 @@ class AMAPEngine:
 
         # res_q in Original AMAP
         # This queue is consumed by the collector process, tile processes will send signals
-        # using it, the signal data type is integer, and it is actually an index < SHARED_MEMORY_SIZE
+        # using it, the signal data type is integer, and it is actually and index < SHARED_MEMORY_SIZE
         # referring to a memory slot in the shared array
         self.collector_queue = mp.Queue()
 
@@ -230,14 +229,15 @@ class AMAPEngine:
         self.cluster_queue = mp.Queue()
 
     def exec(self):
-        with self.exec_id.get_lock():
-            self.exec_id.value = os.getpid()
+        self.exec_id.acquire()
+        self.exec_id[0] = os.getpid()
+        self.exec_id.release()
 
         executor_logger = self.get_logger("executor")
 
         executor_logger.info(LOG_START_PROC_SIGNATURE)
         executor_logger.info(f"Execution process started for {self.project_name}")
-        executor_logger.info(f"Process ID: {self.exec_id.value}")
+        executor_logger.info(f"Process ID: {self.exec_id[0]}")
 
         self.start_time = time.time()
 
@@ -247,7 +247,7 @@ class AMAPEngine:
                                        args=(event_finished,))
         self.finished_events.append(event_finished)
         collector_process.start()
-        executor_logger.info("Collector process started.")
+        executor_logger.info(f"Collector process started.")
 
         executor_logger.info(f"No of clustering processes: {self.no_of_cluster_processes}.")
         for cluster_process_id in range(self.no_of_cluster_processes):
@@ -270,13 +270,13 @@ class AMAPEngine:
         inference_process = mp.Process(target=self.inference_procedure,
                                        args=(self.finished_events,))
         inference_process.start()
-        executor_logger.info("Inference process started.")
+        executor_logger.info(f"Inference process started.")
 
-        executor_logger.info("Waiting for inference process to finish.")
+        executor_logger.info(f"Waiting for inference process to finish.")
         if inference_process:
             inference_process.join()
         else:
-            executor_logger.info("This should not happen, please contact the developer team.")
+            executor_logger.info(f"This should not happen, please contact the developer team.")
 
         self.end_time = time.time()
 
@@ -293,20 +293,20 @@ class AMAPEngine:
         executor_logger.info(f"Clustering finished in: {int(hours)}:{int(minutes)}:{int(seconds)}.")
 
     def collector_procedure(self, _event_finished):
-        with self.collector_id.get_lock():
-            self.collector_id.value = os.getpid()
+        self.collector_id.acquire()
+        self.collector_id[0] = os.getpid()
+        self.collector_id.release()
 
-        set_trace()
         collector_logger = self.get_logger("collector")
 
         collector_logger.info(LOG_START_PROC_SIGNATURE)
         collector_logger.info(f"Collector process started for {self.project_name}")
-        collector_logger.info(f"Process ID: {self.collector_id.value}")
+        collector_logger.info(f"Process ID: {self.collector_id[0]}")
 
         result_dictionary = {}
         no_of_finished_tile_processes = 0
 
-        collector_logger.debug("Starting collector loop")
+        collector_logger.debug(f"Starting collector loop")
 
         iteration_counter = 0
         while True:
@@ -319,21 +319,21 @@ class AMAPEngine:
                 for _ in range(self.no_of_cluster_processes):
                     self.cluster_queue.put(self.COLLECTOR_PROCESS_FINISHED)
                 _event_finished.set()
-                collector_logger.debug("Halted, Exiting...")
+                collector_logger.debug(f"Halted, Exiting...")
                 return
 
-            collector_logger.debug("Calling collector_queue.get()")
+            collector_logger.debug(f"Calling collector_queue.get()")
             shared_memory_index = self.collector_queue.get()
             collector_logger.debug(f"Received shared memory index: {shared_memory_index}")
 
             if shared_memory_index == self.INFERENCE_PROCESS_FINISHED:
-                collector_logger.debug("Inference process finished, sending the signal to tile queue")
+                collector_logger.debug(f"Inference process finished, sending the signal to tile queue")
                 for _ in range(self.no_of_tile_processes):
                     self.tile_queue.put(self.INFERENCE_PROCESS_FINISHED)
 
             elif shared_memory_index == self.TILE_PROCESS_FINISHED:
                 # tile process finished
-                collector_logger.debug("A tiling process has finished.")
+                collector_logger.debug(f"A tiling process has finished.")
 
                 no_of_finished_tile_processes += 1
                 collector_logger.debug(f"{no_of_finished_tile_processes} tiling processes has finished till now.")
@@ -344,13 +344,13 @@ class AMAPEngine:
                         self.cluster_queue.put(self.COLLECTOR_PROCESS_FINISHED)
 
                     # finish all the clustering processes then exit
-                    collector_logger.debug("Setting the finished event.")
+                    collector_logger.debug(f"Setting the finished event.")
                     _event_finished.set()
 
-                    collector_logger.info("Finished, Exiting...")
+                    collector_logger.info(f"Finished, Exiting...")
                     return
             else:
-                collector_logger.debug("Copying semantic and instance predictions to local variables.")
+                collector_logger.debug(f"Copying semantic and instance predictions to local variables.")
                 semantic_prediction = np.copy(self.semantic_predictions_sh_memory[shared_memory_index][1])
                 instance_prediction = np.copy(self.instance_predictions_sh_memory[shared_memory_index][1][0, :, :])
                 offset = np.copy(self.offsets_sh_memory[shared_memory_index][1])
@@ -372,8 +372,8 @@ class AMAPEngine:
                 mask_img = self.merge_with_mask(mask_img, instance_prediction, semantic_prediction, x, y)
                 count += 1
 
-                with self.no_of_processed_tiles.get_lock():
-                    self.no_of_processed_tiles.value += 1
+                with self.processed_tiles.get_lock():
+                    self.processed_tiles.value += 1
 
                 # if we have all the tiles for this image, save results to files
                 if count == self.dataset.n_per_img(image_id):
@@ -422,8 +422,7 @@ class AMAPEngine:
                 mask_instance[is_label] = max_label + 1
                 max_label += 1
             else:
-                condition = np.where(counts == np.max(counts))
-                mask_l = mask_ls[condition[0][0]]
+                mask_l = mask_ls[np.where(counts == np.max(counts))[0][0]]
                 mask_instance[is_label] = mask_l
 
         # merge semantic segm - maximum of class
@@ -460,12 +459,12 @@ class AMAPEngine:
                 return
             (i, n_obj, n, cc_fl, emb_fl, cs_fl, out_fl, npoints, d, tile_nproc) = self.cluster_queue.get()
             if i == -1:
-                cluster_logger.debug("All tiling process finished, setting finished event.")
+                cluster_logger.debug(f"All tiling process finished, setting finished event.")
                 _event_finished.set()
-                cluster_logger.info("Finished, Exiting...")
+                cluster_logger.info(f"Finished, Exiting...")
                 return
             else:
-                cluster_logger.debug("Calling cluster(part of bico) executable.")
+                cluster_logger.debug(f"Calling cluster(part of bico) executable.")
 
                 bico_call = os.path.join(self.BICO_DIR, "cluster")
                 bico_call += " \"%s\" \"%s\" %i %i %i \"%s\" 5 &> /dev/null" % (
@@ -478,57 +477,57 @@ class AMAPEngine:
                 emb_no = len(emb)
                 sample_size = 200
                 if self.clustering_precision == 4:
-                    cluster_logger.debug("Setting sample size of silhouette score to 20%")
+                    cluster_logger.debug(f"Setting sample size of silhouette score to 20%")
                     sample_size = max(emb_no // 5, sample_size)
                 elif self.clustering_precision == 3:
-                    cluster_logger.debug("Setting sample size of silhouette score to 10%")
+                    cluster_logger.debug(f"Setting sample size of silhouette score to 10%")
                     sample_size = max(emb_no // 10, sample_size)
                 elif self.clustering_precision == 2:
-                    cluster_logger.debug("Setting sample size of silhouette score to 5%")
+                    cluster_logger.debug(f"Setting sample size of silhouette score to 5%")
                     sample_size = max(emb_no // 20, sample_size)
                 elif self.clustering_precision == 1:
-                    cluster_logger.debug("Setting sample size of silhouette score to 3.3%")
+                    cluster_logger.debug(f"Setting sample size of silhouette score to 3.3%")
                     sample_size = max(emb_no // 30, sample_size)
                 elif self.clustering_precision == 0:
-                    cluster_logger.debug("Setting sample size of silhouette score to 2%")
+                    cluster_logger.debug(f"Setting sample size of silhouette score to 2%")
                     sample_size = max(emb_no // 50, sample_size)
 
                 cluster_score = silhouette_score(emb, labs, sample_size=sample_size)
                 cluster_logger.debug(f"Cluster silhouette score: {cluster_score}")
 
-                cluster_logger.debug("Saving the result into the tile_clusters_queue_array.")
+                cluster_logger.debug(f"Saving the result into the tile_clusters_queue_array.")
                 self.tile_clusters_queue_array[tile_nproc].put((n, n_obj, cluster_score))
 
     def inference_procedure(self, _finished_events):
-        with self.inference_id.get_lock():
-            self.inference_id.value = os.getpid()
+        self.inference_id.acquire()
+        self.inference_id[0] = os.getpid()
+        self.inference_id.release()
 
         inference_logger = self.get_logger("inference")
 
         inference_logger.info(LOG_START_PROC_SIGNATURE)
         inference_logger.info(f"Inference process started for {self.project_name}")
-        inference_logger.info(f"Process ID: {self.inference_id.value}")
+        inference_logger.info(f"Process ID: {self.inference_id[0]}")
 
         torch.manual_seed(0)
 
-        inference_logger.debug("The UNet has been created.")
+        inference_logger.debug(f"The UNet has been create.")
         unet_model = UNet(n_channels=1,
                           n_classes=3,
                           n_dim=self.embedding_dimensionality,
                           bilinear=True)
 
-        inference_logger.debug("Moving the model to CPU.")
+        inference_logger.debug(f"Moving the model to CPU.")
         device = torch.device('cpu')
         unet_model.to(device)
         unet_model.eval()
 
-        inference_logger.debug("Loading the checkpoint.")
+        inference_logger.debug(f"Loading the checkpoint.")
         model_checkpoint_path = "res/model/cp_10940.pth"
         unet_model.load_state_dict(torch.load(model_checkpoint_path,
                                               map_location=torch.device('cpu')))
 
-        inference_logger.debug("Creating the data loader.")
-        # ? Why ?
+        inference_logger.debug(f"Creating the data loader.")
         sampler = torch.utils.data.RandomSampler(self.dataset)
         loader = DataLoader(self.dataset,
                             batch_size=self.batch_size,
@@ -556,18 +555,20 @@ class AMAPEngine:
                               instance_predictions.cpu().data.numpy(),
                               offsets.cpu().data.numpy())
 
-        inference_logger.info("Inference finished, sending the signal to collector_queue.")
+        inference_logger.info(f"Inference finished, sending the signal to collector_queue.")
         self.collector_queue.put(self.INFERENCE_PROCESS_FINISHED)
 
-        inference_logger.info("Waiting for other processes to finish.")
+        inference_logger.info(f"Waiting for other processes to finish.")
         for event in _finished_events:
             event.wait()
 
-        inference_logger.info("Finished, Exiting...")
+        inference_logger.info(f"Finished, Exiting...")
 
     def tiling_procedure(self, _event_finished, _tile_process_id):
-        with self.tiling_ids.get_lock():
-            self.tiling_ids[_tile_process_id] = os.getpid()
+
+        self.tiling_ids.acquire()
+        self.tiling_ids[_tile_process_id] = os.getpid()
+        self.tiling_ids.release()
 
         tiling_logger = self.get_logger(f"titling_{_tile_process_id}")
 
@@ -580,14 +581,14 @@ class AMAPEngine:
             iteration_counter += 1
             tiling_logger.debug(f"Iteration: {iteration_counter}")
 
-            tiling_logger.debug("Getting a new task. Means asking for a new shared memory index")
+            tiling_logger.debug(f"Getting a new task. Means asking for a new shared memory index")
             shared_memory_index: int = self.tile_queue.get()
             tiling_logger.debug(f"Shared memory index: {shared_memory_index}")
 
             if not self.proceed[0]:
                 tiling_logger.debug(f"Project {self.project_name} has been canceled, setting finished events.")
 
-                tiling_logger.debug("Sending finished signal to collector queue")
+                tiling_logger.debug(f"Sending finished signal to collector queue")
                 self.collector_queue.put(self.TILE_PROCESS_FINISHED)
 
                 _event_finished.set()
@@ -596,15 +597,15 @@ class AMAPEngine:
                 return
 
             if shared_memory_index == self.INFERENCE_PROCESS_FINISHED:
-                tiling_logger.debug("Inference is finished, so no new tile to process")
-                tiling_logger.debug("Signaling collector process before exiting.")
+                tiling_logger.debug(f"Inference is finished, so no new tile to process")
+                tiling_logger.debug(f"Signaling collector process before exiting.")
                 self.collector_queue.put(self.TILE_PROCESS_FINISHED)
-                tiling_logger.debug("Setting finished event.")
+                tiling_logger.debug(f"Setting finished event.")
                 _event_finished.set()
-                tiling_logger.debug("Finished, Exiting...")
+                tiling_logger.debug(f"Finished, Exiting...")
                 return
             else:
-                tiling_logger.debug("Copying semantic and instance prediction.")
+                tiling_logger.debug(f"Copying semantic and instance prediction.")
 
                 semantic_mask = np.copy(self.semantic_predictions_sh_memory[shared_memory_index][1])
 
@@ -612,7 +613,7 @@ class AMAPEngine:
 
                 is_footProcess = semantic_mask == 1
 
-                tiling_logger.debug("Finding the connected components.")
+                tiling_logger.debug(f"Finding the connected components.")
                 connectedComponents_number, connectedComponents_image \
                     = cv2.connectedComponents(is_footProcess.astype(np.uint8))
 
@@ -625,7 +626,7 @@ class AMAPEngine:
                     tiling_logger.debug(f"No of foreground pixels is less than minimum({self.MIN_PIXELS}).")
                     np.copyto(self.instance_predictions_sh_memory[shared_memory_index][1][0, :, :],
                               np.zeros((self.SAMPLE_SIZE, self.SAMPLE_SIZE)))
-                    tiling_logger.debug("Ignoring by putting zeros instead of instance prediction.")
+                    tiling_logger.debug(f"Ignoring by putting zeros instead of instance prediction.")
                     self.collector_queue.put(shared_memory_index)
                 else:
                     inds = np.arange(0, connectedComponents_number)[np.logical_not(ind_sb)]
@@ -642,7 +643,7 @@ class AMAPEngine:
                         is_footProcess = semantic_mask == 1
                         ccs = connectedComponents_image[is_footProcess]
 
-                        tiling_logger.debug("Adding one hot ccs to the embeddings.")
+                        tiling_logger.debug(f"Adding one hot ccs to the embeddings.")
                         one_hot_ccs = np.eye(connectedComponents_number)[ccs - 1] * self.CC_SCALE
                         embeddings = instance_prediction[:, is_footProcess].transpose(1, 0)
                         embeddings = np.append(one_hot_ccs, embeddings, axis=1)
@@ -658,7 +659,7 @@ class AMAPEngine:
                         n_mean = connectedComponents_number
                         n_min, n_max = max(2, n_mean - 2), n_mean + 2
 
-                        tiling_logger.debug("Calling BICO_Quickstart.")
+                        tiling_logger.debug(f"Calling BICO_Quickstart.")
                         bico_call = os.path.join(self.BICO_DIR, "BICO_Quickstart")
                         bico_call += " \"%s\" %i %i %i %i \"%s\" 10 , &>/dev/null" % (
                             emb_fl, n, n_mean,
@@ -681,23 +682,23 @@ class AMAPEngine:
                                 tiling_logger.debug(
                                     f"Project {self.project_name} has been canceled, setting finished events.")
 
-                                tiling_logger.debug("Sending finished signal to collector queue")
+                                tiling_logger.debug(f"Sending finished signal to collector queue")
                                 self.collector_queue.put(self.TILE_PROCESS_FINISHED)
 
                                 _event_finished.set()
                                 tiling_logger.info("Halted, Exiting...")
                                 return
 
-                            tiling_logger.debug("Getting clusters and scores "
-                                                "from tile_clusters_queue_array[_tile_process_id].get().")
+                            tiling_logger.debug(f"Getting clusters and scores "
+                                                f"from tile_clusters_queue_array[_tile_process_id].get().")
                             (n, n_obj, silhouette) = self.tile_clusters_queue_array[_tile_process_id].get()
                             ranks[n_obj - n_min, :] = [n_obj, silhouette]
 
-                        tiling_logger.debug("Choosing the best cluster.")
+                        tiling_logger.debug(f"Choosing the best cluster.")
                         pred_inst, n_pred = self.pick_cluster(ranks, shared_memory_index, is_footProcess)
 
                         # save to output shared array
-                        tiling_logger.debug("Saving back instance mask to the shared memory.")
+                        tiling_logger.debug(f"Saving back instance mask to the shared memory.")
                         self.instance_predictions_sh_memory[shared_memory_index][0].acquire()
                         np.copyto(self.instance_predictions_sh_memory[shared_memory_index][1][0, :, :],
                                   pred_inst)
@@ -707,7 +708,7 @@ class AMAPEngine:
                                             f"to collect the image no: {shared_memory_index}")
                         self.collector_queue.put(shared_memory_index)
 
-                        tiling_logger.debug("Cleaning up the files.")
+                        tiling_logger.debug(f"Cleaning up the files.")
                         os.remove(cs_fl)
                         os.remove(cc_fl)
                         os.remove(emb_fl)
@@ -758,7 +759,6 @@ class AMAPEngine:
 
         out_fl = os.path.join(self.TEMP_DIR, "%i_%i.txt" % (i, n_obj))
         labs = np.loadtxt(out_fl, dtype=int)
-
         instance_mask[is_fp] += labs
 
         return instance_mask, n_obj
@@ -769,6 +769,7 @@ class AMAPEngine:
              np.unique(_image[0, :]),
              np.unique(_image[:, -1]),
              np.unique(_image[-1, :])]))
+
         on_border = on_border[on_border != 0]
         ind = np.zeros(_connected_components_number, dtype=bool)
         res = np.zeros(_image.shape, dtype=bool)

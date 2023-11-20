@@ -5,9 +5,9 @@ import os
 import pathlib
 import shutil
 import uuid
+import threading as tr
 
 # Library Imports
-import torch.multiprocessing as mp
 from PySide6 import QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QFont, QIcon
@@ -16,7 +16,7 @@ from PySide6.QtWidgets import QLabel, QMainWindow, QPushButton, QFileDialog, QMe
 
 # Local Imports
 from src.configs import PROJECT_DIR, HEADER_IMAGE, APP_ICON
-from src.nengine import AMAPEngine
+from src.engine import AMAPEngine
 from src.morph import AMAPMorphometry
 from src.ui.ui_mainwindow import Ui_MainWindow
 from src.utils import filter_tiff_files, analyze_tiff_files, create_progress_dialog, create_message_box, \
@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
         self.engine = None
         self.morphometry = None
         self.progress_dialog = None
-        self.project_process = None
+        self.project_thread = None
         self.UI_state = None
 
         # These are ui elements that will be set in the configure_ui method
@@ -55,13 +55,13 @@ class MainWindow(QMainWindow):
         # This is a QListWidget that demonstrates projects list
         self.list_projects = None
         # This is a QSlider for resource allocation configuration
-        self.slider_resource = None
+        self.slider_cpu = None
         # This is a QSlider for clustering precision configuration
-        self.slider_precision = None
+        self.slider_mem = None
 
         # We need to access these labels later
-        self.label_resource = None
-        self.label_precision = None
+        self.label_cpu_alloc = None
+        self.label_mem_alloc = None
         self.label_channel = None
         self.label_results = None
 
@@ -91,10 +91,10 @@ class MainWindow(QMainWindow):
         label = self.findChild(QLabel, "label_projects")
         label.setFont(QFont("Times", 14))
 
-        label = self.findChild(QLabel, "label_resource_allocation")
+        label = self.findChild(QLabel, "label_cpu_allocation")
         label.setFont(QFont("Times", 14))
 
-        label = self.findChild(QLabel, "label_clustering_precision")
+        label = self.findChild(QLabel, "label_mem_allocation")
         label.setFont(QFont("Times", 14))
 
         label = self.findChild(QLabel, "label_channel")
@@ -104,8 +104,8 @@ class MainWindow(QMainWindow):
         label.setFont(QFont("Times", 14))
 
         # These are the labels that we need to access them later
-        self.label_resource = self.findChild(QLabel, "label_resource_allocation")
-        self.label_precision = self.findChild(QLabel, "label_clustering_precision")
+        self.label_cpu_alloc = self.findChild(QLabel, "label_cpu_allocation")
+        self.label_mem_alloc = self.findChild(QLabel, "label_mem_allocation")
         self.label_channel = self.findChild(QLabel, "label_channel")
         self.label_results = self.findChild(QLabel, "label_results")
 
@@ -139,12 +139,12 @@ class MainWindow(QMainWindow):
         self.spin_channel.valueChanged.connect(self.spin_channel_change)
 
         # Handling resource slider changes
-        self.slider_resource = self.findChild(QSlider, "slider_resource_allocation")
-        self.slider_resource.valueChanged.connect(self.slider_resource_change)
+        self.slider_cpu = self.findChild(QSlider, "slider_cpu_allocation")
+        self.slider_cpu.valueChanged.connect(self.slider_cpu_allocation_change)
 
         # Handling precision slider changes
-        self.slider_precision = self.findChild(QSlider, "slider_precision")
-        self.slider_precision.valueChanged.connect(self.slider_precision_change)
+        self.slider_mem = self.findChild(QSlider, "slider_mem_allocation")
+        self.slider_mem.valueChanged.connect(self.slider_mem_allocation_change)
 
         # Handling stacked checkbox changes
         self.check_stacked = self.findChild(QCheckBox, "check_stacked")
@@ -165,13 +165,13 @@ class MainWindow(QMainWindow):
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
         project_configs = self.load_project_configuration(project_configs_path)
 
-        self.slider_resource.setValue(project_configs['resource_allocation'])
-        self.slider_resource.setEnabled(True)
-        self.label_resource.setEnabled(True)
+        self.slider_cpu.setValue(project_configs['cpu_allocation'])
+        self.slider_cpu.setEnabled(True)
+        self.label_cpu_alloc.setEnabled(True)
 
-        self.slider_precision.setValue(project_configs['clustering_precision'])
-        self.slider_precision.setEnabled(True)
-        self.label_precision.setEnabled(True)
+        self.slider_mem.setValue(project_configs['mem_allocation'])
+        self.slider_mem.setEnabled(True)
+        self.label_mem_alloc.setEnabled(True)
 
         self.spin_channel.setValue(project_configs['target_channel'])
         self.spin_channel.setEnabled(True)
@@ -213,28 +213,28 @@ class MainWindow(QMainWindow):
         self.save_project_configuration(project_configs_path, project_configs)
 
     # Changes the resource configuration for the selected project
-    def slider_resource_change(self, _value):
+    def slider_cpu_allocation_change(self, _value):
         if self.is_disabled or self.is_loading:
             return
         project_name = self.list_projects.currentItem().text()
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
         project_configs = self.load_project_configuration(project_configs_path)
-        project_configs['resource_allocation'] = _value
+        project_configs['cpu_allocation'] = _value
         self.save_project_configuration(project_configs_path, project_configs)
 
     # Changes the precision configuration for the selected project
-    def slider_precision_change(self, _value):
+    def slider_mem_allocation_change(self, _value):
         if self.is_disabled or self.is_loading:
             return
         project_name = self.list_projects.currentItem().text()
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
         project_configs = self.load_project_configuration(project_configs_path)
-        project_configs['clustering_precision'] = _value
+        project_configs['mem_allocation'] = _value
         self.save_project_configuration(project_configs_path, project_configs)
 
     def stop_project_click(self):
         self.button_stop.setEnabled(False)
-        self.engine.cancel_processing()
+        self.engine.cancel()
         self.progress_dialog.setLabelText('Cancelling... it will take some time.')
         self.engine = None
 
@@ -253,8 +253,8 @@ class MainWindow(QMainWindow):
 
         if not project_configs['is_segmentation_finished']:
             self.engine = AMAPEngine(project_configs)
-            self.project_process = mp.Process(target=self.start_project_segmentation)
-            self.project_process.start()
+            self.project_thread = tr.Thread(target=self.start_project_segmentation)
+            self.project_thread.start()
 
         QtCore.QTimer.singleShot(500, self.check_project_status)
 
@@ -267,10 +267,10 @@ class MainWindow(QMainWindow):
             self.is_triggered = True
         proceed = True
         try:
-            if self.project_process is not None and self.project_process.is_alive():
+            if self.project_thread is not None and self.project_thread.is_alive():
                 if self.engine is not None:
                     percentage = self.engine.processed_tiles.value / len(self.engine.dataset) * 100
-                    # A bug in Qt prevent us to set the percentage to 100
+                    # Something in Qt prevent us to set the percentage to 100
                     if percentage > 99:
                         percentage = 99
                     self.progress_dialog.setValue(percentage)
@@ -290,9 +290,9 @@ class MainWindow(QMainWindow):
                     if self.morphometry is None:
                         self.button_stop.setEnabled(False)
                         self.morphometry = AMAPMorphometry(project_configs)
-                        self.project_process = mp.Process(target=self.start_project_morphometry)
+                        self.project_thread = tr.Thread(target=self.start_project_morphometry)
                         self.progress_dialog.setLabelText('Morphometry')
-                        self.project_process.start()
+                        self.project_thread.start()
 
                 else:
                     # Cancelled or finished
@@ -302,12 +302,17 @@ class MainWindow(QMainWindow):
                     self.restore_UI_state(self.UI_state)
                     self.is_disabled = False
                     self.button_stop.setEnabled(False)
-                    self.button_start.setEnabled(False)
-                    self.button_results_morphometry.setEnabled(True)
-                    self.button_results_segmentation.setEnabled(True)
+
+                    project_configs = self.load_project_configuration(project_configs_path)
+                    if project_configs['is_segmentation_finished'] and project_configs['is_morphometry_finished']:
+                        self.button_results_morphometry.setEnabled(True)
+                        self.button_results_segmentation.setEnabled(True)
+                        self.button_start.setEnabled(False)
+                    else:
+                        self.button_start.setEnabled(True)
 
                     self.UI_state = None
-                    self.project_process = None
+                    self.project_thread = None
                     self.progress_dialog = None
                     self.engine = None
                     self.morphometry = None
@@ -428,10 +433,10 @@ class MainWindow(QMainWindow):
             "npy_dir": f"./{PROJECT_DIR}/{selected_path.name}/npy/",
             "result_segmentation_dir": f"./{PROJECT_DIR}/{selected_path.name}/segmentation/",
             "result_morphometry_dir": f"./{PROJECT_DIR}/{selected_path.name}/morphometry/",
-            "resource_allocation": 3,
-            "clustering_precision": 3,
+            "cpu_allocation": 5,
+            "mem_allocation": 2,
             "target_channel": 0,
-            "batch_size": 2,
+            "batch_size": 4,
             "dimensionality": 16,
             "is_stacked": is_stacked,
             "is_segmentation_finished": False,
@@ -467,10 +472,10 @@ class MainWindow(QMainWindow):
             logging.info(f'Project "{project_name}" removed.')
 
     def disable_UI(self):
-        self.slider_resource.setEnabled(False)
-        self.label_resource.setEnabled(False)
-        self.slider_precision.setEnabled(False)
-        self.label_precision.setEnabled(False)
+        self.slider_cpu.setEnabled(False)
+        self.label_cpu_alloc.setEnabled(False)
+        self.slider_mem.setEnabled(False)
+        self.label_mem_alloc.setEnabled(False)
         self.spin_channel.setEnabled(False)
         self.check_stacked.setEnabled(False)
         self.label_channel.setEnabled(False)
@@ -482,14 +487,14 @@ class MainWindow(QMainWindow):
         self.button_results_morphometry.setEnabled(False)
         self.is_disabled = True
 
-        self.slider_resource.setValue(0)
-        self.slider_precision.setValue(0)
+        self.slider_cpu.setValue(0)
+        self.slider_mem.setValue(0)
 
     def save_UI_state(self):
-        return (self.slider_resource.isEnabled(),
-                self.label_resource.isEnabled(),
-                self.slider_precision.isEnabled(),
-                self.label_precision.isEnabled(),
+        return (self.slider_cpu.isEnabled(),
+                self.label_cpu_alloc.isEnabled(),
+                self.slider_mem.isEnabled(),
+                self.label_mem_alloc.isEnabled(),
                 self.spin_channel.isEnabled(),
                 self.check_stacked.isEnabled(),
                 self.label_channel.isEnabled(),
@@ -498,8 +503,8 @@ class MainWindow(QMainWindow):
                 self.button_stop.isEnabled(),
                 self.button_add_project.isEnabled(),
                 self.button_remove_project.isEnabled(),
-                self.slider_resource.value(),
-                self.slider_precision.value(),
+                self.slider_cpu.value(),
+                self.slider_mem.value(),
                 self.spin_channel.value(),
                 self.list_projects.isEnabled(),
                 self.label_results.isEnabled(),
@@ -509,10 +514,10 @@ class MainWindow(QMainWindow):
 
     def restore_UI_state(self, _UI_state):
         self.is_loading = True
-        self.slider_resource.setEnabled(_UI_state[0])
-        self.label_resource.setEnabled(_UI_state[1])
-        self.slider_precision.setEnabled(_UI_state[2])
-        self.label_precision.setEnabled(_UI_state[3])
+        self.slider_cpu.setEnabled(_UI_state[0])
+        self.label_cpu_alloc.setEnabled(_UI_state[1])
+        self.slider_mem.setEnabled(_UI_state[2])
+        self.label_mem_alloc.setEnabled(_UI_state[3])
         self.spin_channel.setEnabled(_UI_state[4])
         self.check_stacked.setEnabled(_UI_state[5])
         self.label_channel.setEnabled(_UI_state[6])
@@ -521,8 +526,8 @@ class MainWindow(QMainWindow):
         self.button_stop.setEnabled(_UI_state[9])
         self.button_add_project.setEnabled(_UI_state[10])
         self.button_remove_project.setEnabled(_UI_state[11])
-        self.slider_resource.setValue(_UI_state[12])
-        self.slider_precision.setValue(_UI_state[13])
+        self.slider_cpu.setValue(_UI_state[12])
+        self.slider_mem.setValue(_UI_state[13])
         self.spin_channel.setValue(_UI_state[14])
         self.list_projects.setEnabled(_UI_state[15])
         self.label_results.setEnabled(_UI_state[16]),

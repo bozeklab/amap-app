@@ -38,13 +38,14 @@ def handle_exception(exc_type, exc_value, exc_traceback):
     sys.exit(1)
 
 
-# Install handler for exceptions
+# Set a global handler for unhandled exceptions
 sys.excepthook = handle_exception
 
 if __name__ == '__main__':
     # To silent Qt warnings
     warnings.filterwarnings("ignore")
 
+    # Use the file at src/configs.py to change the LOG_LEVEL
     logging.basicConfig(
         level=LOG_LEVEL,
         format="%(asctime)s [%(levelname)s] %(message)s",

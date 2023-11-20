@@ -14,7 +14,7 @@ from skimage.morphology import skeletonize
 import torch.multiprocessing as mp
 
 # Local Imports
-from src.configs import LOG_START_PROC_SIGNATURE, LOG_LEVEL
+from src.configs import LOG_START_PROC_SIGNATURE
 from src.utils import get_resolution
 
 
@@ -35,9 +35,6 @@ class AMAPMorphometry:
         self.output_segmentation_directory = _configs['result_segmentation_dir']
         self.output_morphometry_directory = _configs['result_morphometry_dir']
 
-        self.LOG_DIR = self.base_directory + '/log/'
-        self.morphometry_logger = self.get_logger("morphometry")
-
         if not os.path.exists(self.output_morphometry_directory):
             os.mkdir(self.output_morphometry_directory)
 
@@ -49,15 +46,15 @@ class AMAPMorphometry:
         self.no_of_images.release()
 
     def exec(self):
-        self.morphometry_logger.info(LOG_START_PROC_SIGNATURE)
-        self.morphometry_logger.info("Morphometry process started")
+        logging.info(LOG_START_PROC_SIGNATURE)
+        logging.info("Morphometry process started")
 
         self.foot_processes_parameter_table(self.source_directory,
                                             self.npy_directory,
                                             self.output_morphometry_directory)
 
         self.combine_FP_SD(self.output_morphometry_directory)
-        self.morphometry_logger.info("Morphometry process finished")
+        logging.info("Morphometry process finished")
 
         self.configs['is_morphometry_finished'] = True
         config_file_path = os.path.join(self.base_directory, "conf.json")
@@ -86,7 +83,7 @@ class AMAPMorphometry:
 
             for i, filename in enumerate(filenames):
 
-                self.morphometry_logger.info(f"Saving file: {filename}")
+                logging.info(f"Saving file: {filename}")
 
                 self.no_of_processed_images.acquire()
                 self.no_of_processed_images[0] = i
@@ -345,12 +342,3 @@ class AMAPMorphometry:
         t["FP Perim."] = foot_process_perim
         t["FP Circ."] = foot_process_circ
         t.to_csv(os.path.join(param_dr, "all_params.csv"), sep="\t")
-
-    def get_logger(self, _process_name):
-        logger = logging.getLogger(f"{self.project_id}-{_process_name}")
-        formatter = logging.Formatter("%(asctime)s [%(levelname)s] %(message)s")
-        stream_handler = logging.FileHandler(f"{self.LOG_DIR}/{_process_name}.log")
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
-        logger.setLevel(LOG_LEVEL)
-        return logger

@@ -43,7 +43,6 @@ class PredictionDataset(Dataset):
         self.imgs = {}
         self.per_img_cumsum = np.cumsum(self.per_img)
         self.cur_img_i = -1
-        print('Creating dataset with %i files' % len(self.image_files), flush=True)
 
     def n_per_img(self, img_nb):
         return self.per_img[img_nb]

@@ -108,4 +108,4 @@ class PredictionDataset(Dataset):
         img = self.imgs[fn][:, x:(x + self.dimension), y:(y + self.dimension)]
 
         return {'image': torch.from_numpy(img),
-                'offs': torch.from_numpy(np.array([file_i, x, y, d_img], dtype=np.int))}
+                'offs': torch.from_numpy(np.array([file_i, x, y, d_img], dtype=np.int32))}

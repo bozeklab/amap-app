@@ -224,6 +224,7 @@ def plot_labels(_image, _instance_mask, _semantic_mask, ncomp, _output_file):
 
 
 def open_dir_in_browser(_path):
+    _path = os.path.normpath(_path)
     if sys.platform == 'win32':
         os.startfile(_path)
     elif sys.platform == 'darwin':

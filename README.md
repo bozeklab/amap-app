@@ -1,12 +1,12 @@
 # AMAP Application
 
-AMAP is a desktop application that leverages deep learning to performs [segmentation and morphometry quantification of fluorescent microscopy images of podocytes](https://www.biorxiv.org/content/10.1101/2021.06.14.448284v3). The application is desgined for CPU, users don't need GPUs to use the application.
+AMAP-APP is a desktop application that leverages deep learning to performs [segmentation and morphometry quantification of fluorescent microscopy images of podocytes](https://www.kidney-international.org/article/S0085-2538(23)00180-1/fulltext). The application is tailored for CPU utilization; GPUs are not requisite for its operation.
 
 ![AMAP Results](res/images/header.png)
 
-This application is developed based on [AMAP](https://github.com/bozeklab/amap) repository with changes to instance segmentation algorithm to make it more CPU friendly. The major change compared to the original work is that for instance segmentation AMAP-APP doesn't rely clustering of the pixel's embeddings. Instead it leverages PyTorch's operationd and a Connected Component Labeling algorithm to achive similar results. Therefor 
+This application represents a reimplementation of the [original reseasrch](https://github.com/bozeklab/amap) with modifications to the instance segmentation algorithm aimed at enhancing CPU efficiency. A notable departure from the original methodology is observed in the instance segmentation, which no longer depends on pixel embedding clustering. Instead, it capitalizes on PyTorch operations and a Connected Component Labeling algorithm to achieve comparable results.
 
-AMAP is a cross-platform application implemented in Python 3.9 on Linux. It is also tested on Windows and Mac. There might be some visual incosistancies between different platforms, but wouldn't affect the functionality.
+AMAP-APP is a cross-platform application implemented in Python 3.9, primarily tested on Linux and with less extensive testing on Windows and Mac. While some visual inconsistencies may arise between different platforms, these variations do not compromise the functionality of the application.
 
 ## Requirements
 
@@ -24,8 +24,43 @@ Minimum: 4GB of RAM and 2 CPU cores.
 
 Recommended: 16GB of RAM and 8 CPU cores.
 
-### Installation
+## Installation
 
+### Linux
+
+1. Make sure you have below requirements installed
+    * git
+    * Python 3.9
+
+2. Clone the repositary
+```bash
+git clone https://github.com/platonic-realm/amap-app.git
+```
+
+3. Preparing the Python environment
+    * go into the **amap-app** directory
+
+```bash
+cd amap-app
+```
+
+    * Create a virtual environment
+
+```bash
+python -m venv venv
+```
+
+    * Activating the virtual environment
+
+```bash
+source ./venv/bin/activate
+```
+
+    * Instaling the requirements
+
+```bash
+pip instanll -r requirements.txt
+```
 
 ## Update
 

@@ -56,7 +56,8 @@ source ./venv/bin/activate
 
 On windows
 
-```bash
+```powershell
+Set-ExecutionPolicy Unrestricted -Scope Process
 .\venv\Scripts\Activate
 ```
 
@@ -68,7 +69,7 @@ pip instanll -r requirements.txt
 
 On windows
 
-```bash
+```powershell
 pip instanll -r requirements-win.txt
 ```
 
@@ -96,7 +97,8 @@ source ./venv/bin/activate
 
 On windows
 
-```bash
+```powershell
+Set-ExecutionPolicy Unrestricted -Scope Process
 .\venv\Scripts\Activate
 ```
 

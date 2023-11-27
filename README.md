@@ -28,7 +28,7 @@ Recommended: 16GB of RAM and 8 CPU cores.
 
 ### Linux
 
-1. Make sure you have below requirements installed
+1. Make sure you have below tools installed
     * git
     * Python 3.9
 
@@ -38,25 +38,24 @@ git clone https://github.com/platonic-realm/amap-app.git
 ```
 
 3. Preparing the Python environment
-    * go into the **amap-app** directory
+
+go into the **amap-app** directory
 
 ```bash
 cd amap-app
 ```
 
-    * Create a virtual environment
+Create a virtual environment
 
 ```bash
 python -m venv venv
 ```
-
-    * Activating the virtual environment
+Activating the virtual environment
 
 ```bash
 source ./venv/bin/activate
 ```
-
-    * Instaling the requirements
+Instaling the requirements
 
 ```bash
 pip instanll -r requirements.txt

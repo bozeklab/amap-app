@@ -64,13 +64,13 @@ Set-ExecutionPolicy Unrestricted -Scope Process
 Install the requirements
 
 ```bash
-pip instanll -r requirements.txt
+pip install -r requirements.txt
 ```
 
 On windows
 
 ```powershell
-pip instanll -r requirements-win.txt
+pip install -r requirements-win.txt
 ```
 
 ## Update

@@ -53,10 +53,23 @@ Activate the virtual environment
 ```bash
 source ./venv/bin/activate
 ```
+
+On windows
+
+```bash
+.\venv\Scripts\Activate
+```
+
 Install the requirements
 
 ```bash
 pip instanll -r requirements.txt
+```
+
+On windows
+
+```bash
+pip instanll -r requirements-win.txt
 ```
 
 ## Update
@@ -79,6 +92,12 @@ Activate the virtual environment
 
 ```bash
 source ./venv/bin/activate
+```
+
+On windows
+
+```bash
+.\venv\Scripts\Activate
 ```
 
 Execute the application

@@ -26,13 +26,11 @@ Recommended: 16GB of RAM and 8 CPU cores.
 
 ## Installation
 
-### Linux
-
 1. Make sure you have below tools installed
     * git
     * Python 3.9
 
-2. Clone the repositary
+2. Clone the repository
 ```bash
 git clone https://github.com/platonic-realm/amap-app.git
 ```
@@ -50,12 +48,12 @@ Create a virtual environment
 ```bash
 python -m venv venv
 ```
-Activating the virtual environment
+Activate the virtual environment
 
 ```bash
 source ./venv/bin/activate
 ```
-Instaling the requirements
+Install the requirements
 
 ```bash
 pip instanll -r requirements.txt
@@ -73,16 +71,47 @@ To update AMAP to the latest version:
 git pull
 ```
 
-## Using AMAP
+## Running AMAP-APP
+
+We need to activate the virtual environment before launching the application. First, using a terminal or PowerShell, go to the repository's directory.
+
+Activate the virtual environment
+
+```bash
+source ./venv/bin/activate
+```
+
+Execute the application
+
+```bash
+python main.py
+```
+
+## Using AMAP-APP
 
 AMAP application processes images in batches. A project is a batch of images combined with certain configurations. All images in a project must have the same order of dimensionality. At the current state AMAP only supports tiff files, therefore to create a project:
 
 * Click on the "Add Project" button
+
+<p align="center"> <img src="res/images/add_button.jpg" alt="Add Project" width="500"/> </p>
+
 * Select the directory containing the tiff files
+
+<p align="center"> <img src="res/images/select_project.jpg" alt="Select Project" width="500"/> </p>
+
 * Configure the project
-	* Resource Allocation: Determines how much of your computer resources will be allocated to the processing. The project finishes faster, but you might not be able to use your computer for other tasks if you choose high values.
-	* Clustering Precision: AMAP uses scikit learn implementation of silhouette score for choosing the best number of clusters, which is very CPU intensitive. Reducing the sample size while calculating the silhouette score, accelerates the process by an order of magnitude without having serious effects on the results. Choosing high values will result in long processing times.
-	* Target Channel: AMAP tries to automatically detect the target channel in the input images. Change this value when the automatic detection is wrong.
-	* Stacked Checkbox: Determines whether the input images are an array of stacked images or not. If they are, AMAP will use a max projection of them. Change this value in the case of wrong detection.
-* Click on the "Start" button and wait for the processing to finishes.
+
+	* CPU Allocation: Specifies the core count utilized by the application, with a minimum of 1 and a maximum corresponding to the available number of cores.
+	* Memory Allocation: Sets the batch size during inference. A minimum of 2GB of memory is recommended for lower settings, while atleast 8GB is advised for optimal performance at maximum settings.
+	* Target Channel: AMAP-APP endeavors to autonomously detect the target channel in the input images. Adjust this value only in cases where the automatic detection proves inaccurate.
+	* Stacked Checkbox: Specifies whether the input images are an array of stacked images. If affirmative, AMAP will employ a max projection of the stack. Modify this value if the detection is inaccurate.
+
+<p align="center"> <img src="res/images/configure_project.jpg" alt="Configure Project" width="500"/> </p>
+
+* Click the **Start** button and await the completion of the processing
+
+<p align="center"> <img src="res/images/progress.jpg" alt="Progress" width="500"/> </p>
+
 * Open Segmentation and Morphometry directories using the related buttons.
+
+<p align="center"> <img src="res/images/results.jpg" alt="Results" width="500"/> </p>

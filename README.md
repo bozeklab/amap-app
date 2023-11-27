@@ -50,11 +50,13 @@ python -m venv venv
 ```
 Activate the virtual environment
 
+* On Linux/Mac
+
 ```bash
 source ./venv/bin/activate
 ```
 
-On windows
+* On windows
 
 ```powershell
 Set-ExecutionPolicy Unrestricted -Scope Process
@@ -63,11 +65,13 @@ Set-ExecutionPolicy Unrestricted -Scope Process
 
 Install the requirements
 
+* On Linux/Mac
+
 ```bash
 pip install -r requirements.txt
 ```
 
-On windows
+* On windows
 
 ```powershell
 pip install -r requirements-win.txt
@@ -91,11 +95,13 @@ We need to activate the virtual environment before launching the application. Fi
 
 Activate the virtual environment
 
+* On Linux/Mac
+
 ```bash
 source ./venv/bin/activate
 ```
 
-On windows
+* On windows
 
 ```powershell
 Set-ExecutionPolicy Unrestricted -Scope Process

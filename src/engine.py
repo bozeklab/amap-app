@@ -63,7 +63,7 @@ class AMAPEngine:
 
         # Set number of threads for PyTorch engine
         # https://pytorch.org/docs/stable/torch.html#torch.set_num_threads
-        threads_num = max(1, int(self.cpu_alloc_value / 4 * self.cpu_count))
+        threads_num = max(1, int((self.cpu_alloc_value-1) / 4 * self.cpu_count))
         logging.info("Using %d logical cores.", threads_num)
         torch.set_num_threads(threads_num)
 

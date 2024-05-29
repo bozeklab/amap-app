@@ -71,7 +71,7 @@ class AMAPEngine:
         self.TARGET_RESOLUTION = 0.022724609375
         self.SAMPLE_SIZE = 384
         self.DATASET_STEPS = 128
-        self.MIN_PIXELS = 10
+        self.MIN_PIXELS = 25
         self.CC_SCALE = 4
         self.TEMP_DIR = self.base_directory + '/temp/'
         self.LOG_DIR = self.base_directory + '/log/'
@@ -241,7 +241,7 @@ class AMAPEngine:
                         logging.info(f"Ploting the segmentation results as: {result_file_path}")
                         plot_labels(self.dataset.read_file(filepath),
                                     cc_objects,
-                                    self.semantic_mask,
+                                    mask_img[1],
                                     cc_number,
                                     result_file_path)
 

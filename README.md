@@ -32,7 +32,7 @@ Recommended: 16GB of RAM and 8 CPU cores.
 
 2. Clone the repository
 ```bash
-git clone https://github.com/platonic-realm/amap-app.git
+git clone https://github.com/bozeklab/amap-app.git
 ```
 
 3. Preparing the Python environment

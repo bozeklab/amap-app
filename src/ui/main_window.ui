@@ -29,10 +29,10 @@
        </sizepolicy>
       </property>
       <property name="frameShape">
-       <enum>QFrame::NoFrame</enum>
+       <enum>QFrame::Shape::NoFrame</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+       <enum>QFrame::Shadow::Raised</enum>
       </property>
       <property name="lineWidth">
        <number>0</number>
@@ -53,7 +53,6 @@
           <font>
            <family>Z003</family>
            <pointsize>48</pointsize>
-           <weight>50</weight>
            <italic>true</italic>
            <bold>false</bold>
            <underline>false</underline>
@@ -62,16 +61,16 @@
           </font>
          </property>
          <property name="focusPolicy">
-          <enum>Qt::NoFocus</enum>
+          <enum>Qt::FocusPolicy::NoFocus</enum>
          </property>
          <property name="layoutDirection">
-          <enum>Qt::LeftToRight</enum>
+          <enum>Qt::LayoutDirection::LeftToRight</enum>
          </property>
          <property name="autoFillBackground">
           <bool>false</bool>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="text">
           <string>Welcome to AMAP application</string>
@@ -80,7 +79,7 @@
           <bool>false</bool>
          </property>
          <property name="alignment">
-          <set>Qt::AlignCenter</set>
+          <set>Qt::AlignmentFlag::AlignCenter</set>
          </property>
         </widget>
        </item>
@@ -93,10 +92,10 @@
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::Panel</enum>
+          <enum>QFrame::Shape::Panel</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Plain</enum>
+          <enum>QFrame::Shadow::Plain</enum>
          </property>
          <property name="text">
           <string/>
@@ -124,10 +123,10 @@
        </sizepolicy>
       </property>
       <property name="frameShape">
-       <enum>QFrame::StyledPanel</enum>
+       <enum>QFrame::Shape::StyledPanel</enum>
       </property>
       <property name="frameShadow">
-       <enum>QFrame::Raised</enum>
+       <enum>QFrame::Shadow::Raised</enum>
       </property>
       <layout class="QHBoxLayout" name="horizontalLayout">
        <item>
@@ -174,10 +173,10 @@
           </sizepolicy>
          </property>
          <property name="frameShape">
-          <enum>QFrame::NoFrame</enum>
+          <enum>QFrame::Shape::NoFrame</enum>
          </property>
          <property name="frameShadow">
-          <enum>QFrame::Raised</enum>
+          <enum>QFrame::Shadow::Raised</enum>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <item>
@@ -203,7 +202,7 @@
                  <bool>false</bool>
                 </property>
                 <property name="layoutDirection">
-                 <enum>Qt::LeftToRight</enum>
+                 <enum>Qt::LayoutDirection::LeftToRight</enum>
                 </property>
                 <property name="text">
                  <string>Results:</string>
@@ -233,7 +232,7 @@
               <item>
                <spacer name="horizontalSpacer_2">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>
@@ -270,10 +269,10 @@
                <number>0</number>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
               <property name="tickPosition">
-               <enum>QSlider::TicksBothSides</enum>
+               <enum>QSlider::TickPosition::TicksBothSides</enum>
               </property>
              </widget>
             </item>
@@ -292,15 +291,25 @@
                <number>0</number>
               </property>
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
               <property name="tickPosition">
-               <enum>QSlider::TicksBothSides</enum>
+               <enum>QSlider::TickPosition::TicksBothSides</enum>
               </property>
              </widget>
             </item>
             <item row="4" column="0" colspan="2">
              <layout class="QGridLayout" name="grid_configs">
+              <item row="1" column="0">
+               <widget class="QCheckBox" name="check_stacked">
+                <property name="enabled">
+                 <bool>false</bool>
+                </property>
+                <property name="text">
+                 <string>Stacked</string>
+                </property>
+               </widget>
+              </item>
               <item row="0" column="1">
                <widget class="QSpinBox" name="spin_channel">
                 <property name="enabled">
@@ -321,13 +330,13 @@
                 </property>
                </widget>
               </item>
-              <item row="1" column="0">
-               <widget class="QCheckBox" name="check_stacked">
+              <item row="2" column="0">
+               <widget class="QCheckBox" name="check_old_roi">
                 <property name="enabled">
                  <bool>false</bool>
                 </property>
                 <property name="text">
-                 <string>Stacked</string>
+                 <string>Old ROI algorithm (AMAP)</string>
                 </property>
                </widget>
               </item>
@@ -336,10 +345,10 @@
             <item row="4" column="2">
              <spacer name="horizontalSpacer">
               <property name="orientation">
-               <enum>Qt::Horizontal</enum>
+               <enum>Qt::Orientation::Horizontal</enum>
               </property>
               <property name="sizeType">
-               <enum>QSizePolicy::MinimumExpanding</enum>
+               <enum>QSizePolicy::Policy::MinimumExpanding</enum>
               </property>
               <property name="sizeHint" stdset="0">
                <size>
@@ -354,7 +363,7 @@
               <item>
                <spacer name="horizontalSpacer_3">
                 <property name="orientation">
-                 <enum>Qt::Horizontal</enum>
+                 <enum>Qt::Orientation::Horizontal</enum>
                 </property>
                 <property name="sizeHint" stdset="0">
                  <size>

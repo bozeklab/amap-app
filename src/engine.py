@@ -240,7 +240,8 @@ class AMAPEngine:
                         result_file_path = os.path.join(sub_out_dir, "%s_pred.png" % fn_short[:-4])
 
                         roi_mask, _ = get_ROI_from_predictions(mask_img[1, :, :],
-                                                               mask_img[1, :, :].shape)
+                                                               mask_img[1, :, :].shape,
+                                                               self.configs['is_old_roi'])
 
                         min_area_threshold = 4000
                         contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)

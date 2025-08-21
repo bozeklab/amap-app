@@ -103,7 +103,7 @@ class AMAPMorphometry:
                     csv_file.close()
 
                 sd = predictions[1, :, :]
-                roi_mask, sd = get_ROI_from_predictions(predictions[1, :, :], sd.shape)
+                roi_mask, sd = get_ROI_from_predictions(predictions[1, :, :], sd.shape, self.configs["is_old_roi"])
 
                 min_area_threshold = 4000
                 contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)

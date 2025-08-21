@@ -52,6 +52,8 @@ class MainWindow(QMainWindow):
         self.spin_channel = None
         # This is a checkbox that determine whether the tiff images are stacked or not
         self.check_stacked = None
+        # This is a checkbox that determine whether to use AMAP or AMAP-APP ROI detection
+        self.check_old_roi = None
         # This is a QListWidget that demonstrates projects list
         self.list_projects = None
         # This is a QSlider for resource allocation configuration
@@ -149,6 +151,8 @@ class MainWindow(QMainWindow):
         # Handling stacked checkbox changes
         self.check_stacked = self.findChild(QCheckBox, "check_stacked")
         self.check_stacked.stateChanged.connect(self.checkbox_stack_change)
+        self.check_old_roi = self.findChild(QCheckBox, "check_old_roi")
+        self.check_old_roi.stateChanged.connect(self.checkbox_old_roi_change)
 
         # Handling list of projects
         self.list_projects = self.findChild(QListWidget, "list_widget_projects")
@@ -175,6 +179,9 @@ class MainWindow(QMainWindow):
 
         self.spin_channel.setValue(project_configs['target_channel'])
         self.spin_channel.setEnabled(True)
+
+        self.check_old_roi.setChecked(project_configs['is_old_roi'])
+        self.check_old_roi.setEnabled(True)
 
         self.check_stacked.setChecked(project_configs['is_stacked'])
         self.check_stacked.setEnabled(True)
@@ -210,6 +217,16 @@ class MainWindow(QMainWindow):
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
         project_configs = self.load_project_configuration(project_configs_path)
         project_configs['is_stacked'] = True if _value == 2 else False
+        self.save_project_configuration(project_configs_path, project_configs)
+
+    # Changes the stacked configuration for the selected project
+    def checkbox_old_roi_change(self, _value):
+        if self.is_disabled or self.is_loading:
+            return
+        project_name = self.list_projects.currentItem().text()
+        project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
+        project_configs = self.load_project_configuration(project_configs_path)
+        project_configs['is_old_roi'] = True if _value == 2 else False
         self.save_project_configuration(project_configs_path, project_configs)
 
     # Changes the resource configuration for the selected project
@@ -440,7 +457,8 @@ class MainWindow(QMainWindow):
             "dimensionality": 16,
             "is_stacked": is_stacked,
             "is_segmentation_finished": False,
-            "is_morphometry_finished": False
+            "is_morphometry_finished": False,
+            "is_old_roi": False
         }
         self.save_project_configuration(f"{destination_directory}/conf.json", project_configuration)
         self.load_projects()
@@ -478,6 +496,7 @@ class MainWindow(QMainWindow):
         self.label_mem_alloc.setEnabled(False)
         self.spin_channel.setEnabled(False)
         self.check_stacked.setEnabled(False)
+        self.check_old_roi.setEnabled(False)
         self.label_channel.setEnabled(False)
         self.button_start.setEnabled(False)
         self.button_stop.setEnabled(False)
@@ -510,6 +529,7 @@ class MainWindow(QMainWindow):
                 self.label_results.isEnabled(),
                 self.button_results_segmentation.isEnabled(),
                 self.button_results_morphometry.isEnabled(),
+                self.check_old_roi.isEnabled(),
                 )
 
     def restore_UI_state(self, _UI_state):
@@ -520,6 +540,7 @@ class MainWindow(QMainWindow):
         self.label_mem_alloc.setEnabled(_UI_state[3])
         self.spin_channel.setEnabled(_UI_state[4])
         self.check_stacked.setEnabled(_UI_state[5])
+        self.check_old_roi.setEnabled(_UI_state[19])
         self.label_channel.setEnabled(_UI_state[6])
         self.button_results_segmentation.setEnabled(_UI_state[7])
         self.button_start.setEnabled(_UI_state[8])

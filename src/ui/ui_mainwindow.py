@@ -56,8 +56,8 @@ class Ui_MainWindow(object):
         sizePolicy.setVerticalStretch(2)
         sizePolicy.setHeightForWidth(self.top_frame.sizePolicy().hasHeightForWidth())
         self.top_frame.setSizePolicy(sizePolicy)
-        self.top_frame.setFrameShape(QFrame.NoFrame)
-        self.top_frame.setFrameShadow(QFrame.Raised)
+        self.top_frame.setFrameShape(QFrame.Shape.NoFrame)
+        self.top_frame.setFrameShadow(QFrame.Shadow.Raised)
         self.top_frame.setLineWidth(0)
         self.top_frame.setMidLineWidth(1)
         self.gridLayout = QGridLayout(self.top_frame)
@@ -78,12 +78,12 @@ class Ui_MainWindow(object):
         font1.setStrikeOut(False)
         font1.setKerning(True)
         self.label_header.setFont(font1)
-        self.label_header.setFocusPolicy(Qt.NoFocus)
-        self.label_header.setLayoutDirection(Qt.LeftToRight)
+        self.label_header.setFocusPolicy(Qt.FocusPolicy.NoFocus)
+        self.label_header.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
         self.label_header.setAutoFillBackground(False)
-        self.label_header.setFrameShadow(QFrame.Plain)
+        self.label_header.setFrameShadow(QFrame.Shadow.Plain)
         self.label_header.setScaledContents(False)
-        self.label_header.setAlignment(Qt.AlignCenter)
+        self.label_header.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
         self.gridLayout.addWidget(self.label_header, 0, 0, 1, 1)
 
@@ -94,8 +94,8 @@ class Ui_MainWindow(object):
         sizePolicy2.setVerticalStretch(2)
         sizePolicy2.setHeightForWidth(self.label_image.sizePolicy().hasHeightForWidth())
         self.label_image.setSizePolicy(sizePolicy2)
-        self.label_image.setFrameShape(QFrame.Panel)
-        self.label_image.setFrameShadow(QFrame.Plain)
+        self.label_image.setFrameShape(QFrame.Shape.Panel)
+        self.label_image.setFrameShadow(QFrame.Shadow.Plain)
         self.label_image.setPixmap(QPixmap(u"../../res/images/header.png"))
         self.label_image.setScaledContents(True)
 
@@ -112,8 +112,8 @@ class Ui_MainWindow(object):
         sizePolicy3.setVerticalStretch(3)
         sizePolicy3.setHeightForWidth(self.frame_buttom.sizePolicy().hasHeightForWidth())
         self.frame_buttom.setSizePolicy(sizePolicy3)
-        self.frame_buttom.setFrameShape(QFrame.StyledPanel)
-        self.frame_buttom.setFrameShadow(QFrame.Raised)
+        self.frame_buttom.setFrameShape(QFrame.Shape.StyledPanel)
+        self.frame_buttom.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout = QHBoxLayout(self.frame_buttom)
         self.horizontalLayout.setObjectName(u"horizontalLayout")
         self.vertical_layout_projects = QVBoxLayout()
@@ -154,8 +154,8 @@ class Ui_MainWindow(object):
         sizePolicy4.setVerticalStretch(0)
         sizePolicy4.setHeightForWidth(self.frame_projects.sizePolicy().hasHeightForWidth())
         self.frame_projects.setSizePolicy(sizePolicy4)
-        self.frame_projects.setFrameShape(QFrame.NoFrame)
-        self.frame_projects.setFrameShadow(QFrame.Raised)
+        self.frame_projects.setFrameShape(QFrame.Shape.NoFrame)
+        self.frame_projects.setFrameShadow(QFrame.Shadow.Raised)
         self.horizontalLayout_4 = QHBoxLayout(self.frame_projects)
         self.horizontalLayout_4.setObjectName(u"horizontalLayout_4")
         self.grid_project = QGridLayout()
@@ -172,7 +172,7 @@ class Ui_MainWindow(object):
         self.label_results = QLabel(self.frame_projects)
         self.label_results.setObjectName(u"label_results")
         self.label_results.setEnabled(False)
-        self.label_results.setLayoutDirection(Qt.LeftToRight)
+        self.label_results.setLayoutDirection(Qt.LayoutDirection.LeftToRight)
 
         self.horizontal_result.addWidget(self.label_results)
 
@@ -207,8 +207,8 @@ class Ui_MainWindow(object):
         self.slider_mem_allocation.setMaximum(4)
         self.slider_mem_allocation.setValue(0)
         self.slider_mem_allocation.setSliderPosition(0)
-        self.slider_mem_allocation.setOrientation(Qt.Horizontal)
-        self.slider_mem_allocation.setTickPosition(QSlider.TicksBothSides)
+        self.slider_mem_allocation.setOrientation(Qt.Orientation.Horizontal)
+        self.slider_mem_allocation.setTickPosition(QSlider.TickPosition.TicksBothSides)
 
         self.grid_project.addWidget(self.slider_mem_allocation, 2, 1, 1, 4)
 
@@ -218,13 +218,19 @@ class Ui_MainWindow(object):
         self.slider_cpu_allocation.setMaximum(4)
         self.slider_cpu_allocation.setValue(0)
         self.slider_cpu_allocation.setSliderPosition(0)
-        self.slider_cpu_allocation.setOrientation(Qt.Horizontal)
-        self.slider_cpu_allocation.setTickPosition(QSlider.TicksBothSides)
+        self.slider_cpu_allocation.setOrientation(Qt.Orientation.Horizontal)
+        self.slider_cpu_allocation.setTickPosition(QSlider.TickPosition.TicksBothSides)
 
         self.grid_project.addWidget(self.slider_cpu_allocation, 0, 1, 1, 4)
 
         self.grid_configs = QGridLayout()
         self.grid_configs.setObjectName(u"grid_configs")
+        self.check_stacked = QCheckBox(self.frame_projects)
+        self.check_stacked.setObjectName(u"check_stacked")
+        self.check_stacked.setEnabled(False)
+
+        self.grid_configs.addWidget(self.check_stacked, 1, 0, 1, 1)
+
         self.spin_channel = QSpinBox(self.frame_projects)
         self.spin_channel.setObjectName(u"spin_channel")
         self.spin_channel.setEnabled(False)
@@ -238,16 +244,16 @@ class Ui_MainWindow(object):
 
         self.grid_configs.addWidget(self.label_channel, 0, 0, 1, 1)
 
-        self.check_stacked = QCheckBox(self.frame_projects)
-        self.check_stacked.setObjectName(u"check_stacked")
-        self.check_stacked.setEnabled(False)
+        self.check_old_roi = QCheckBox(self.frame_projects)
+        self.check_old_roi.setObjectName(u"check_old_roi")
+        self.check_old_roi.setEnabled(False)
 
-        self.grid_configs.addWidget(self.check_stacked, 1, 0, 1, 1)
+        self.grid_configs.addWidget(self.check_old_roi, 2, 0, 1, 1)
 
 
         self.grid_project.addLayout(self.grid_configs, 4, 0, 1, 2)
 
-        self.horizontalSpacer = QSpacerItem(30, 20, QSizePolicy.MinimumExpanding, QSizePolicy.Minimum)
+        self.horizontalSpacer = QSpacerItem(30, 20, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Minimum)
 
         self.grid_project.addItem(self.horizontalSpacer, 4, 2, 1, 1)
 
@@ -309,8 +315,9 @@ class Ui_MainWindow(object):
         self.button_result_segmentation.setText(QCoreApplication.translate("MainWindow", u"Segmentation", None))
         self.button_result_morphometry.setText(QCoreApplication.translate("MainWindow", u"Morphometry", None))
         self.label_cpu_allocation.setText(QCoreApplication.translate("MainWindow", u"CPU allocation:", None))
-        self.label_channel.setText(QCoreApplication.translate("MainWindow", u"Target channel", None))
         self.check_stacked.setText(QCoreApplication.translate("MainWindow", u"Stacked", None))
+        self.label_channel.setText(QCoreApplication.translate("MainWindow", u"Target channel", None))
+        self.check_old_roi.setText(QCoreApplication.translate("MainWindow", u"Old ROI algorithm (AMAP)", None))
         self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.button_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
     # retranslateUi

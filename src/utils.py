@@ -256,7 +256,41 @@ def plot_labels(_image,
     pred_image.save(f"{_output_file}_pred.png")
 
 
-def get_ROI_from_predictions(predictions, img_sh):
+def get_ROI_AMAP(predictions, img_sh):
+    MIN_AREA = 500
+    predictions = cv2.resize(predictions, img_sh, interpolation=cv2.INTER_NEAREST)
+    all_pred = predictions > 0
+    all_pred = all_pred.astype(np.uint8)
+
+    contours, _ = cv2.findContours(all_pred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+    conv_cnt = [cv2.convexHull(cont) for cont in contours]
+    # filter small areas
+    contours = list(filter(lambda cnt: cv2.contourArea(cnt) > MIN_AREA, conv_cnt))
+
+    mask_roi = np.zeros(img_sh, np.uint8)
+    for i in range(len(contours)):
+        mask1 = cv2.drawContours(np.zeros(img_sh, np.uint8), contours, i, 1, -1)
+        mask_roi[mask1 == 1] = 1
+
+    mask_orig = mask_roi.copy()
+    kernel = np.zeros((11, 11), np.uint8)
+    kernel = cv2.circle(kernel, (5, 5), 5, 1, 0)
+
+    mask_roi = cv2.dilate(mask_roi, kernel, iterations=15)
+    mask_roi = cv2.erode(mask_roi, kernel, iterations=10)
+    mask_roi[mask_orig == 1] = 1
+
+    sd = predictions.copy()
+    sd[sd == 1] = 0
+    sd[sd == 2] = 1
+    sd[mask_roi == 0] = 0
+    sd = skeletonize(sd)
+    sd = sd.astype(np.uint8)
+
+    return mask_roi, sd
+
+
+def get_ROI_AMAPAPP(predictions, img_sh):
     predictions = cv2.resize(predictions,
                              img_sh,
                              interpolation=cv2.INTER_NEAREST)
@@ -274,24 +308,6 @@ def get_ROI_from_predictions(predictions, img_sh):
     mask_roi = cv2.erode(mask_roi,
                          kernel,
                          iterations=7)
-    # mask_roi[mask_orig == 1] = 1
-
-    # set_trace()
-    # tmp_tensor = predictions.copy()
-    # tmp_tensor[predictions == 1] = 0
-    # tmp_tensor = cv2.dilate(tmp_tensor,
-    #                         kernel,
-    #                         iterations=3)
-    # kernel = np.array([[0, 1, 0],
-    #                    [1, 1, 1],
-    #                    [0, 1, 0]], dtype=np.uint8)
-
-    # tmp_tensor = cv2.erode(tmp_tensor,
-    #                        kernel,
-    #                        iterations=3)
-
-    # tmp_image = Image.fromarray((mask_contours * 126).astype(np.uint8), mode="L")
-    # tmp_image.save("/home/arash/Desktop/Temp/pred.png")
 
     sd = predictions.copy()
     sd[sd == 1] = 0
@@ -301,6 +317,13 @@ def get_ROI_from_predictions(predictions, img_sh):
     sd = sd.astype(np.uint8)
 
     return mask_roi, sd
+
+
+def get_ROI_from_predictions(predictions, img_sh, is_old):
+    if is_old:
+        return get_ROI_AMAP(predictions, img_sh)
+    else:
+        return get_ROI_AMAPAPP(predictions, img_sh)
 
 
 def open_dir_in_browser(_path):

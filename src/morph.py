@@ -10,12 +10,11 @@ import math
 import cv2
 import numpy as np
 import pandas as pd
-from skimage.morphology import skeletonize
 import torch.multiprocessing as mp
 
 # Local Imports
 from src.configs import LOG_START_PROC_SIGNATURE
-from src.utils import get_resolution
+from src.utils import get_resolution, get_ROI_from_predictions
 
 
 class AMAPMorphometry:
@@ -104,9 +103,15 @@ class AMAPMorphometry:
                     csv_file.close()
 
                 sd = predictions[1, :, :]
-                roi_mask, sd = self.get_ROI_from_predictions(predictions[1, :, :], sd.shape)
+                roi_mask, sd = get_ROI_from_predictions(predictions[1, :, :], sd.shape)
 
-                contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+                min_area_threshold = 4000
+                contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                contours = [contour for contour in contours if cv2.contourArea(contour) > min_area_threshold]
+                contours_mask = np.zeros_like(sd)
+                cv2.drawContours(contours_mask, contours, -1, 1, thickness=cv2.FILLED)
+                sd[contours_mask == 0] = 0
+
                 roi_area = 0
                 for cnt in contours:
                     roi_area += cv2.contourArea(cnt)
@@ -286,40 +291,6 @@ class AMAPMorphometry:
                 ds = ds * res
                 all_ds = np.append(all_ds, ds)
         return all_pts, np.mean(all_ds)
-
-    @staticmethod
-    def get_ROI_from_predictions(predictions, img_sh):
-        MIN_AREA = 500
-        predictions = cv2.resize(predictions, img_sh, interpolation=cv2.INTER_NEAREST)
-        all_pred = predictions > 0
-        all_pred = all_pred.astype(np.uint8)
-
-        contours, _ = cv2.findContours(all_pred, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
-        conv_cnt = [cv2.convexHull(cont) for cont in contours]
-        # filter small areas
-        contours = list(filter(lambda cnt: cv2.contourArea(cnt) > MIN_AREA, conv_cnt))
-
-        mask_roi = np.zeros(img_sh, np.uint8)
-        for i in range(len(contours)):
-            mask1 = cv2.drawContours(np.zeros(img_sh, np.uint8), contours, i, 1, -1)
-            mask_roi[mask1 == 1] = 1
-
-        mask_orig = mask_roi.copy()
-        kernel = np.zeros((11, 11), np.uint8)
-        kernel = cv2.circle(kernel, (5, 5), 5, 1, 0)
-
-        mask_roi = cv2.dilate(mask_roi, kernel, iterations=15)
-        mask_roi = cv2.erode(mask_roi, kernel, iterations=10)
-        mask_roi[mask_orig == 1] = 1
-
-        sd = predictions.copy()
-        sd[sd == 1] = 0
-        sd[sd == 2] = 1
-        sd[mask_roi == 0] = 0
-        sd = skeletonize(sd)
-        sd = sd.astype(np.uint8)
-
-        return mask_roi, sd
 
     @staticmethod
     def combine_FP_SD(param_dr):

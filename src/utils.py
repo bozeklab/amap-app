@@ -9,11 +9,13 @@ import sys
 # Library Imports
 import numpy as np
 import tifffile
-from PIL import Image
+import cv2
+from PIL import Image, ImageDraw
 from PySide6 import QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QPalette, QColor, QFont
 from PySide6.QtWidgets import QApplication, QProgressDialog, QMessageBox
+from skimage.morphology import skeletonize
 
 # Local Imports
 from src.configs import PROJECT_DIR
@@ -205,22 +207,100 @@ def fill_with_colors(_image, _mask, ncomp, cols):
     return _image
 
 
-def plot_labels(_image, _instance_mask, _semantic_mask, ncomp, _output_file):
+def plot_labels(_image,
+                _instance_mask,
+                _semantic_mask,
+                _roi_contours,
+                _ncomp,
+                _output_file):
+
+    background = Image.fromarray(_image[0, :, :] * 255).convert("RGBA")
+
     instance_layer = np.zeros((*_instance_mask.shape, 4))
     semantic_layer = np.zeros((*_instance_mask.shape, 4))
-    col_inds = [float(nc) / ncomp for nc in range(ncomp)]
+
+    col_inds = [float(nc) / _ncomp for nc in range(_ncomp)]
     col_sem = [float(nc) / 3 for nc in range(3)]
     random.shuffle(col_inds)
 
-    instance_layer = fill_with_colors(instance_layer, _instance_mask, ncomp, col_inds)
+    instance_layer = fill_with_colors(instance_layer, _instance_mask, _ncomp, col_inds)
+    instance_image = Image.fromarray((instance_layer * 255).astype(np.uint8), mode="RGBA")
+    instance_image = Image.alpha_composite(background, instance_image)
+    instance_image.save(f"{_output_file}_instance.png")
+
     semantic_layer = fill_with_colors(semantic_layer, _semantic_mask, 3, col_sem)
-    instance_layer = np.append(instance_layer, semantic_layer, axis=1)
-    background = np.append(_image[0, :, :], _image[0, :, :], axis=1)
+    semantic_image = Image.fromarray((semantic_layer * 255).astype(np.uint8), mode="RGBA")
+    semantic_image = Image.alpha_composite(background, semantic_image)
+    semantic_image.save(f"{_output_file}_semantic.png")
 
-    instance_layer = Image.fromarray((instance_layer * 255).astype(np.uint8), mode="RGBA")
-    background = Image.fromarray(background * 255).convert("RGBA")
+    _semantic_mask[_semantic_mask == 1] = 0
+    roi_layer = np.zeros((*_semantic_mask.shape, 4))
+    col_sem = [float(nc) / 3 for nc in range(3)]
+    roi_layer = fill_with_colors(roi_layer, _semantic_mask, 3, col_sem)
+    roi_image = Image.fromarray((roi_layer * 255).astype(np.uint8), mode="RGBA")
 
-    Image.alpha_composite(background, instance_layer).save(_output_file)
+    roi_image = Image.alpha_composite(background, roi_image)
+    draw = ImageDraw.Draw(roi_image)
+    for contour in _roi_contours:
+        points = np.squeeze(contour)
+        if points.shape[0] > 2:
+            draw.line(tuple(map(tuple, points)), fill="red", width=1)
+
+    roi_image.save(f"{_output_file}_roi.png")
+
+    width = roi_image.width
+    pred_image = Image.new("RGBA", (width * 3, roi_image.height))
+    pred_image.paste(instance_image, (0, 0))
+    pred_image.paste(semantic_image, (width, 0))
+    pred_image.paste(roi_image, (width*2, 0))
+    pred_image.save(f"{_output_file}_pred.png")
+
+
+def get_ROI_from_predictions(predictions, img_sh):
+    predictions = cv2.resize(predictions,
+                             img_sh,
+                             interpolation=cv2.INTER_NEAREST)
+
+    kernel = np.array([[0, 1, 0],
+                       [1, 1, 1],
+                       [0, 1, 0]], dtype=np.uint8)
+    # kernel = cv2.circle(kernel, (5, 5), 5, 1, 0)
+
+    mask_roi = predictions.copy().astype(np.uint8)
+    mask_roi[mask_roi == 1] = 0
+    mask_roi = cv2.dilate(mask_roi,
+                          kernel,
+                          iterations=15)
+    mask_roi = cv2.erode(mask_roi,
+                         kernel,
+                         iterations=7)
+    # mask_roi[mask_orig == 1] = 1
+
+    # set_trace()
+    # tmp_tensor = predictions.copy()
+    # tmp_tensor[predictions == 1] = 0
+    # tmp_tensor = cv2.dilate(tmp_tensor,
+    #                         kernel,
+    #                         iterations=3)
+    # kernel = np.array([[0, 1, 0],
+    #                    [1, 1, 1],
+    #                    [0, 1, 0]], dtype=np.uint8)
+
+    # tmp_tensor = cv2.erode(tmp_tensor,
+    #                        kernel,
+    #                        iterations=3)
+
+    # tmp_image = Image.fromarray((mask_contours * 126).astype(np.uint8), mode="L")
+    # tmp_image.save("/home/arash/Desktop/Temp/pred.png")
+
+    sd = predictions.copy()
+    sd[sd == 1] = 0
+    sd[sd == 2] = 1
+    sd[mask_roi == 0] = 0
+    sd = skeletonize(sd)
+    sd = sd.astype(np.uint8)
+
+    return mask_roi, sd
 
 
 def open_dir_in_browser(_path):

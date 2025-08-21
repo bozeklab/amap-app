@@ -18,6 +18,7 @@ from src.nn.dataset import PredictionDataset
 from src.nn.unet import UNet
 from src.utils import mkdirs, plot_labels
 from src.configs import LOG_START_PROC_SIGNATURE
+from src.utils import get_ROI_from_predictions
 
 
 # Labels of the model output
@@ -238,10 +239,18 @@ class AMAPEngine:
 
                         result_file_path = os.path.join(sub_out_dir, "%s_pred.png" % fn_short[:-4])
 
+                        roi_mask, _ = get_ROI_from_predictions(mask_img[1, :, :],
+                                                               mask_img[1, :, :].shape)
+
+                        min_area_threshold = 4000
+                        contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
+                        contours = [contour for contour in contours if cv2.contourArea(contour) > min_area_threshold]
+
                         logging.info(f"Ploting the segmentation results as: {result_file_path}")
                         plot_labels(self.dataset.read_file(filepath),
                                     cc_objects,
                                     mask_img[1],
+                                    contours,
                                     cc_number,
                                     result_file_path)
 

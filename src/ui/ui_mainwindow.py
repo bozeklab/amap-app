@@ -161,11 +161,63 @@ class Ui_MainWindow(object):
         self.grid_project = QGridLayout()
         self.grid_project.setSpacing(6)
         self.grid_project.setObjectName(u"grid_project")
-        self.label_mem_allocation = QLabel(self.frame_projects)
-        self.label_mem_allocation.setObjectName(u"label_mem_allocation")
-        self.label_mem_allocation.setEnabled(False)
+        self.slider_cpu_allocation = QSlider(self.frame_projects)
+        self.slider_cpu_allocation.setObjectName(u"slider_cpu_allocation")
+        self.slider_cpu_allocation.setEnabled(False)
+        self.slider_cpu_allocation.setMaximum(4)
+        self.slider_cpu_allocation.setValue(0)
+        self.slider_cpu_allocation.setSliderPosition(0)
+        self.slider_cpu_allocation.setOrientation(Qt.Orientation.Horizontal)
+        self.slider_cpu_allocation.setTickPosition(QSlider.TickPosition.TicksBothSides)
 
-        self.grid_project.addWidget(self.label_mem_allocation, 2, 0, 1, 1)
+        self.grid_project.addWidget(self.slider_cpu_allocation, 0, 1, 1, 4)
+
+        self.slider_mem_allocation = QSlider(self.frame_projects)
+        self.slider_mem_allocation.setObjectName(u"slider_mem_allocation")
+        self.slider_mem_allocation.setEnabled(False)
+        self.slider_mem_allocation.setMaximum(4)
+        self.slider_mem_allocation.setValue(0)
+        self.slider_mem_allocation.setSliderPosition(0)
+        self.slider_mem_allocation.setOrientation(Qt.Orientation.Horizontal)
+        self.slider_mem_allocation.setTickPosition(QSlider.TickPosition.TicksBothSides)
+
+        self.grid_project.addWidget(self.slider_mem_allocation, 2, 1, 1, 4)
+
+        self.grid_configs = QGridLayout()
+        self.grid_configs.setObjectName(u"grid_configs")
+        self.check_old_roi = QCheckBox(self.frame_projects)
+        self.check_old_roi.setObjectName(u"check_old_roi")
+        self.check_old_roi.setEnabled(False)
+
+        self.grid_configs.addWidget(self.check_old_roi, 2, 0, 1, 1)
+
+        self.spin_channel = QSpinBox(self.frame_projects)
+        self.spin_channel.setObjectName(u"spin_channel")
+        self.spin_channel.setEnabled(False)
+        self.spin_channel.setMaximum(20)
+
+        self.grid_configs.addWidget(self.spin_channel, 0, 1, 1, 1)
+
+        self.check_stacked = QCheckBox(self.frame_projects)
+        self.check_stacked.setObjectName(u"check_stacked")
+        self.check_stacked.setEnabled(False)
+
+        self.grid_configs.addWidget(self.check_stacked, 1, 0, 1, 1)
+
+        self.label_channel = QLabel(self.frame_projects)
+        self.label_channel.setObjectName(u"label_channel")
+        self.label_channel.setEnabled(False)
+
+        self.grid_configs.addWidget(self.label_channel, 0, 0, 1, 1)
+
+        self.check_include_sd = QCheckBox(self.frame_projects)
+        self.check_include_sd.setObjectName(u"check_include_sd")
+        self.check_include_sd.setEnabled(False)
+
+        self.grid_configs.addWidget(self.check_include_sd, 3, 0, 1, 1)
+
+
+        self.grid_project.addLayout(self.grid_configs, 4, 0, 1, 2)
 
         self.horizontal_result = QHBoxLayout()
         self.horizontal_result.setObjectName(u"horizontal_result")
@@ -201,62 +253,6 @@ class Ui_MainWindow(object):
 
         self.grid_project.addWidget(self.label_cpu_allocation, 0, 0, 1, 1)
 
-        self.slider_mem_allocation = QSlider(self.frame_projects)
-        self.slider_mem_allocation.setObjectName(u"slider_mem_allocation")
-        self.slider_mem_allocation.setEnabled(False)
-        self.slider_mem_allocation.setMaximum(4)
-        self.slider_mem_allocation.setValue(0)
-        self.slider_mem_allocation.setSliderPosition(0)
-        self.slider_mem_allocation.setOrientation(Qt.Orientation.Horizontal)
-        self.slider_mem_allocation.setTickPosition(QSlider.TickPosition.TicksBothSides)
-
-        self.grid_project.addWidget(self.slider_mem_allocation, 2, 1, 1, 4)
-
-        self.slider_cpu_allocation = QSlider(self.frame_projects)
-        self.slider_cpu_allocation.setObjectName(u"slider_cpu_allocation")
-        self.slider_cpu_allocation.setEnabled(False)
-        self.slider_cpu_allocation.setMaximum(4)
-        self.slider_cpu_allocation.setValue(0)
-        self.slider_cpu_allocation.setSliderPosition(0)
-        self.slider_cpu_allocation.setOrientation(Qt.Orientation.Horizontal)
-        self.slider_cpu_allocation.setTickPosition(QSlider.TickPosition.TicksBothSides)
-
-        self.grid_project.addWidget(self.slider_cpu_allocation, 0, 1, 1, 4)
-
-        self.grid_configs = QGridLayout()
-        self.grid_configs.setObjectName(u"grid_configs")
-        self.check_stacked = QCheckBox(self.frame_projects)
-        self.check_stacked.setObjectName(u"check_stacked")
-        self.check_stacked.setEnabled(False)
-
-        self.grid_configs.addWidget(self.check_stacked, 1, 0, 1, 1)
-
-        self.spin_channel = QSpinBox(self.frame_projects)
-        self.spin_channel.setObjectName(u"spin_channel")
-        self.spin_channel.setEnabled(False)
-        self.spin_channel.setMaximum(20)
-
-        self.grid_configs.addWidget(self.spin_channel, 0, 1, 1, 1)
-
-        self.label_channel = QLabel(self.frame_projects)
-        self.label_channel.setObjectName(u"label_channel")
-        self.label_channel.setEnabled(False)
-
-        self.grid_configs.addWidget(self.label_channel, 0, 0, 1, 1)
-
-        self.check_old_roi = QCheckBox(self.frame_projects)
-        self.check_old_roi.setObjectName(u"check_old_roi")
-        self.check_old_roi.setEnabled(False)
-
-        self.grid_configs.addWidget(self.check_old_roi, 2, 0, 1, 1)
-
-
-        self.grid_project.addLayout(self.grid_configs, 4, 0, 1, 2)
-
-        self.horizontalSpacer = QSpacerItem(30, 20, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Minimum)
-
-        self.grid_project.addItem(self.horizontalSpacer, 4, 2, 1, 1)
-
         self.horizontal_stop_start = QHBoxLayout()
         self.horizontal_stop_start.setObjectName(u"horizontal_stop_start")
         self.horizontalSpacer_3 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
@@ -277,6 +273,16 @@ class Ui_MainWindow(object):
 
 
         self.grid_project.addLayout(self.horizontal_stop_start, 5, 2, 1, 1)
+
+        self.label_mem_allocation = QLabel(self.frame_projects)
+        self.label_mem_allocation.setObjectName(u"label_mem_allocation")
+        self.label_mem_allocation.setEnabled(False)
+
+        self.grid_project.addWidget(self.label_mem_allocation, 2, 0, 1, 1)
+
+        self.horizontalSpacer = QSpacerItem(30, 20, QSizePolicy.Policy.MinimumExpanding, QSizePolicy.Minimum)
+
+        self.grid_project.addItem(self.horizontalSpacer, 4, 2, 1, 1)
 
 
         self.horizontalLayout_4.addLayout(self.grid_project)
@@ -310,15 +316,16 @@ class Ui_MainWindow(object):
         self.label_projects.setText(QCoreApplication.translate("MainWindow", u"Projects:", None))
         self.button_remove_project.setText(QCoreApplication.translate("MainWindow", u"Remove", None))
         self.button_add_project.setText(QCoreApplication.translate("MainWindow", u"Add", None))
-        self.label_mem_allocation.setText(QCoreApplication.translate("MainWindow", u"Memory allocation:", None))
+        self.check_old_roi.setText(QCoreApplication.translate("MainWindow", u"Old ROI algorithm (AMAP)", None))
+        self.check_stacked.setText(QCoreApplication.translate("MainWindow", u"Stacked", None))
+        self.label_channel.setText(QCoreApplication.translate("MainWindow", u"Target channel", None))
+        self.check_include_sd.setText(QCoreApplication.translate("MainWindow", u"SD length analysis", None))
         self.label_results.setText(QCoreApplication.translate("MainWindow", u"Results:", None))
         self.button_result_segmentation.setText(QCoreApplication.translate("MainWindow", u"Segmentation", None))
         self.button_result_morphometry.setText(QCoreApplication.translate("MainWindow", u"Morphometry", None))
         self.label_cpu_allocation.setText(QCoreApplication.translate("MainWindow", u"CPU allocation:", None))
-        self.check_stacked.setText(QCoreApplication.translate("MainWindow", u"Stacked", None))
-        self.label_channel.setText(QCoreApplication.translate("MainWindow", u"Target channel", None))
-        self.check_old_roi.setText(QCoreApplication.translate("MainWindow", u"Old ROI algorithm (AMAP)", None))
         self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.button_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))
+        self.label_mem_allocation.setText(QCoreApplication.translate("MainWindow", u"Memory allocation:", None))
     # retranslateUi
 

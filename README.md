@@ -132,6 +132,8 @@ AMAP application processes images in batches. A project is a batch of images com
 	* Memory Allocation: Sets the batch size during inference. A minimum of 2GB of memory is recommended for lower settings, while atleast 8GB is advised for optimal performance at maximum settings.
 	* Target Channel: AMAP-APP endeavors to autonomously detect the target channel in the input images. Adjust this value only in cases where the automatic detection proves inaccurate.
 	* Stacked Checkbox: Specifies whether the input images are an array of stacked images. If affirmative, AMAP will employ a max projection of the stack. Modify this value if the detection is inaccurate.
+	* Old ROI Checkbox: Determines whether to use AMAP or AMAP-APP ROI detection. Check this if you want to use the original AMAP ROI detection method.
+	* Include SD Checkbox: Enables SD length analysis in morphometry results. **Important**: This feature may potentially conflict with a patent filed subsequent to the AMAP paper publication. Users are solely responsible for ensuring compliance with all applicable intellectual property regulations and legal requirements.
 
 <p align="center"> <img src="res/images/configure_project.jpg" alt="Configure Project" width="500"/> </p>
 

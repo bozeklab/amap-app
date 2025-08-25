@@ -54,6 +54,8 @@ class MainWindow(QMainWindow):
         self.check_stacked = None
         # This is a checkbox that determine whether to use AMAP or AMAP-APP ROI detection
         self.check_old_roi = None
+        # This is a checkbox that determine if we should include sd length analysis
+        self.check_include_sd = None
         # This is a QListWidget that demonstrates projects list
         self.list_projects = None
         # This is a QSlider for resource allocation configuration
@@ -153,6 +155,8 @@ class MainWindow(QMainWindow):
         self.check_stacked.stateChanged.connect(self.checkbox_stack_change)
         self.check_old_roi = self.findChild(QCheckBox, "check_old_roi")
         self.check_old_roi.stateChanged.connect(self.checkbox_old_roi_change)
+        self.check_include_sd = self.findChild(QCheckBox, "check_include_sd")
+        self.check_include_sd.toggled.connect(self.checkbox_include_sd_change)
 
         # Handling list of projects
         self.list_projects = self.findChild(QListWidget, "list_widget_projects")
@@ -183,6 +187,9 @@ class MainWindow(QMainWindow):
         self.check_old_roi.setChecked(project_configs['is_old_roi'])
         self.check_old_roi.setEnabled(True)
 
+        self.check_include_sd.setChecked(project_configs.get('does_include_sd', False))
+        self.check_include_sd.setEnabled(True)
+
         self.check_stacked.setChecked(project_configs['is_stacked'])
         self.check_stacked.setEnabled(True)
         self.label_channel.setEnabled(True)
@@ -192,6 +199,10 @@ class MainWindow(QMainWindow):
         self.button_results_morphometry.setEnabled(project_configs['is_morphometry_finished'])
 
         self.button_start.setEnabled(not project_configs['is_morphometry_finished'])
+        self.check_stacked.setEnabled(not project_configs['is_morphometry_finished'])
+        self.check_old_roi.setEnabled(not project_configs['is_morphometry_finished'])
+        self.check_include_sd.setEnabled(not project_configs['is_morphometry_finished'])
+        self.spin_channel.setEnabled(not project_configs['is_morphometry_finished'])
         self.button_stop.setEnabled(False)
 
         self.button_remove_project.setEnabled(True)
@@ -227,6 +238,38 @@ class MainWindow(QMainWindow):
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
         project_configs = self.load_project_configuration(project_configs_path)
         project_configs['is_old_roi'] = True if _value == 2 else False
+        self.save_project_configuration(project_configs_path, project_configs)
+
+    # Changes the stacked configuration for the selected project
+    def checkbox_include_sd_change(self, _value):
+        if self.is_disabled or self.is_loading:
+            return
+
+        # Only show confirmation dialog when checking the checkbox (False to True)
+        if _value == True:  # Qt.Checked = 2
+            # Show confirmation dialog
+            questionBox = QMessageBox()
+            questionBox.setWindowIcon(self.app_icon)
+            questionBox.setFont(QFont("Times", 14))
+            questionBox.setIcon(QMessageBox.Warning)
+            questionBox.setText('The SD length analysis feature may potentially conflict with patents filed subsequent to the AMAP paper publication.\n\n'
+                              'The authors of AMAP-APP do not hold ownership of any such patent.\n'
+                              'Users are solely responsible for ensuring compliance with all applicable intellectual property regulations and legal requirements.\n'
+                              'The authors disclaim any responsibility for misuse of this feature or any resulting legal consequences.\n\n'
+                              'Do you acknowledge the above notice and wish to include SD length analysis in your results?')
+            questionBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            questionBox.setDefaultButton(QMessageBox.No)
+            answer = questionBox.exec()
+            
+            if answer == questionBox.No:
+                # User declined, revert the checkbox to unchecked state
+                self.check_include_sd.setChecked(False)
+                return
+
+        project_name = self.list_projects.currentItem().text()
+        project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
+        project_configs = self.load_project_configuration(project_configs_path)
+        project_configs['does_include_sd'] = self.check_include_sd.isChecked()
         self.save_project_configuration(project_configs_path, project_configs)
 
     # Changes the resource configuration for the selected project
@@ -458,7 +501,8 @@ class MainWindow(QMainWindow):
             "is_stacked": is_stacked,
             "is_segmentation_finished": False,
             "is_morphometry_finished": False,
-            "is_old_roi": False
+            "is_old_roi": False,
+            "does_include_sd": False
         }
         self.save_project_configuration(f"{destination_directory}/conf.json", project_configuration)
         self.load_projects()
@@ -497,6 +541,7 @@ class MainWindow(QMainWindow):
         self.spin_channel.setEnabled(False)
         self.check_stacked.setEnabled(False)
         self.check_old_roi.setEnabled(False)
+        self.check_include_sd.setEnabled(False)
         self.label_channel.setEnabled(False)
         self.button_start.setEnabled(False)
         self.button_stop.setEnabled(False)
@@ -530,6 +575,7 @@ class MainWindow(QMainWindow):
                 self.button_results_segmentation.isEnabled(),
                 self.button_results_morphometry.isEnabled(),
                 self.check_old_roi.isEnabled(),
+                self.check_include_sd.isEnabled(),
                 )
 
     def restore_UI_state(self, _UI_state):
@@ -541,6 +587,7 @@ class MainWindow(QMainWindow):
         self.spin_channel.setEnabled(_UI_state[4])
         self.check_stacked.setEnabled(_UI_state[5])
         self.check_old_roi.setEnabled(_UI_state[19])
+        self.check_include_sd.setEnabled(_UI_state[20])
         self.label_channel.setEnabled(_UI_state[6])
         self.button_results_segmentation.setEnabled(_UI_state[7])
         self.button_start.setEnabled(_UI_state[8])

@@ -19,8 +19,7 @@ from src.configs import PROJECT_DIR, HEADER_IMAGE, APP_ICON
 from src.engine import AMAPEngine
 from src.morph import AMAPMorphometry
 from src.ui.ui_mainwindow import Ui_MainWindow
-from src.utils import filter_tiff_files, analyze_tiff_files, create_progress_dialog, create_message_box, \
-    open_dir_in_browser
+from src.utils import filter_tiff_files, analyze_tiff_files, create_progress_dialog, create_message_box,     open_dir_in_browser, z_project_images
 
 
 class MainWindow(QMainWindow):
@@ -469,24 +468,35 @@ class MainWindow(QMainWindow):
         if not is_valid:
             progressDialog.close()
             logging.error('The shape of the last image is different from the rest.\n' + dimensions)
-            msgBox = create_message_box("The dimension of all images in a project should be the same. "
-                                        "Please review the output of the application in terminal for more info.",
-                                        self.app_icon)
-            msgBox.exec()
-            return
+            msgBox = QMessageBox()
+            msgBox.setWindowIcon(self.app_icon)
+            msgBox.setFont(QFont("Times", 14))
+            msgBox.setText("The dimension of all images in a project should be the same.\n"
+                           "Do you want to create a z-projection of the images?")
+            msgBox.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+            msgBox.setDefaultButton(QMessageBox.No)
+            answer = msgBox.exec()
 
-        os.mkdir(destination_directory)
+            if answer == QMessageBox.No:
+                return
 
-        images_directory = os.path.join(destination_directory, 'images/')
-        os.mkdir(images_directory)
+            progressDialog.show()
+            os.mkdir(destination_directory)
+            z_project_images(selected_directory, os.path.join(destination_directory, 'images/'))
+            is_stacked = False
+        else:
+            os.mkdir(destination_directory)
 
-        for tiff_image in tiff_files:
-            # Prevents UI freeze
-            QApplication.processEvents()
+        if is_valid:
+            images_directory = os.path.join(destination_directory, 'images/')
+            os.mkdir(images_directory)
+            for tiff_image in tiff_files:
+                # Prevents UI freeze
+                QApplication.processEvents()
 
-            full_name = os.path.join(selected_directory, tiff_image)
-            if os.path.isfile(full_name):
-                shutil.copy(full_name, images_directory)
+                full_name = os.path.join(selected_directory, tiff_image)
+                if os.path.isfile(full_name):
+                    shutil.copy(full_name, images_directory)
 
         # Saving the configuration file into the project directory (Do not confuse with 'Projects' dir)
         project_configuration = {

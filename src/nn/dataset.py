@@ -12,7 +12,7 @@ from PIL import Image
 # Local Imports
 from src.utils import get_tiff_resolution, get_resolution
 
-MAX_N_INST = 350
+MAX_N_INST = 380
 
 
 class PredictionDataset(Dataset):

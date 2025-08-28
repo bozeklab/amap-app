@@ -111,6 +111,8 @@ class AMAPEngine:
         logging.info(LOG_START_PROC_SIGNATURE)
         logging.info(f"Inference started for {self.project_name}")
 
+        import pudb.remote
+        pudb.remote.set_trace(host='0.0.0.0', port=6900)
         self.start_time = time.time()
 
         self.inference_procedure()

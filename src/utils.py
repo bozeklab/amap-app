@@ -334,3 +334,20 @@ def open_dir_in_browser(_path):
         subprocess.call(['open', _path])
     else:
         subprocess.call(['xdg-open', _path])
+
+
+def z_project_images(source_directory, destination_directory):
+    if not os.path.exists(destination_directory):
+        os.makedirs(destination_directory)
+    tiff_files = filter_tiff_files(source_directory)
+    for tiff_file in tiff_files:
+        full_file_path = os.path.join(source_directory, tiff_file)
+        image = tifffile.imread(full_file_path)
+        if len(image.shape) > 2:
+            # Perform max projection along the z-axis (axis 0)
+            projected_image = np.max(image, axis=0)
+        else:
+            projected_image = image
+        # Save the projected image
+        destination_file = os.path.join(destination_directory, tiff_file)
+        tifffile.imwrite(destination_file, projected_image)

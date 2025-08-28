@@ -368,6 +368,10 @@ class MainWindow(QMainWindow):
                         self.button_results_morphometry.setEnabled(True)
                         self.button_results_segmentation.setEnabled(True)
                         self.button_start.setEnabled(False)
+                        self.check_old_roi.setEnabled(False)
+                        self.check_include_sd.setEnabled(False)
+                        self.check_stacked.setEnabled(False)
+                        self.spin_channel.setEnabled(False)
                     else:
                         self.button_start.setEnabled(True)
 

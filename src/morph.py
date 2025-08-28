@@ -5,6 +5,7 @@ import logging
 import os
 import re
 import math
+import glob
 
 # Library Imports
 import cv2
@@ -75,10 +76,13 @@ class AMAPMorphometry:
         self.no_of_images[0] = len(filenames)
         self.no_of_images.release()
 
-        sd_grid_file = open(os.path.join(output_dir, "SD_length_grid_index.csv"), 'w')
+        if self.configs['does_include_sd']:
+            sd_grid_file = open(os.path.join(output_dir, "SD_length_grid_index.csv"), 'w')
         try:
-            sd_grid_file.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
-                "file", "SD length", "grid crossings", "mean distance", "SD total length", "ROI total area"))
+
+            if self.configs['does_include_sd']:
+                sd_grid_file.write("%s\t%s\t%s\t%s\t%s\t%s\n" % (
+                    "file", "SD length", "grid crossings", "mean distance", "SD total length", "ROI total area"))
 
             for i, filename in enumerate(filenames):
 
@@ -125,11 +129,13 @@ class AMAPMorphometry:
                 sd_len = total_sd_len / total_roi_area
                 grid_points, grid_index = self.calculate_grid(sd, res)
 
-                sd_grid_file.write(
-                     "%s\t%.3f\t%i\t%.3f\t%.3f\t%.3f\n" % (
-                        filename, sd_len, grid_points, grid_index, total_sd_len, total_roi_area))
+                if self.configs['does_include_sd']:
+                    sd_grid_file.write(
+                         "%s\t%.3f\t%i\t%.3f\t%.3f\t%.3f\n" % (
+                            filename, sd_len, grid_points, grid_index, total_sd_len, total_roi_area))
         finally:
-            sd_grid_file.close()
+            if self.configs['does_include_sd']:
+                sd_grid_file.close()
 
     @staticmethod
     def foot_process_parameters(region, res):
@@ -292,24 +298,60 @@ class AMAPMorphometry:
                 all_ds = np.append(all_ds, ds)
         return all_pts, np.mean(all_ds)
 
-    @staticmethod
-    def combine_FP_SD(param_dr):
-        t = pd.read_table(os.path.join(param_dr, "SD_length_grid_index.csv"))
+    def combine_FP_SD(self, param_dr):
+        if self.configs['does_include_sd']:
+            t = pd.read_table(os.path.join(param_dr, "SD_length_grid_index.csv"))
+        else:
+            t = pd.DataFrame()
         foot_process_area = np.zeros((t.shape[0]))
         foot_process_perim = np.zeros((t.shape[0]))
         foot_process_circ = np.zeros((t.shape[0]))
-        for i in range(t.shape[0]):
-            fl = t["file"][i]
-            fp_t = np.loadtxt(os.path.join(param_dr, fl + "_fp_params.csv"), delimiter="\t", skiprows=1, ndmin=2)
-            if fp_t.size > 0:
-                foot_process_area[i] = np.mean(fp_t[:, 1])
-                foot_process_perim[i] = np.mean(fp_t[:, 2])
-                foot_process_circ[i] = np.mean(fp_t[:, 3])
-            else:
-                foot_process_area[i] = 0
-                foot_process_perim[i] = 0
-                foot_process_circ[i] = 0
-        t["FP Area"] = foot_process_area
-        t["FP Perim."] = foot_process_perim
-        t["FP Circ."] = foot_process_circ
+
+        if self.configs['does_include_sd']:
+            for i in range(t.shape[0]):
+                fl = t["file"][i]
+                fp_t = np.loadtxt(os.path.join(param_dr, fl + "_fp_params.csv"), delimiter="\t", skiprows=1, ndmin=2)
+                if fp_t.size > 0:
+                    foot_process_area[i] = np.mean(fp_t[:, 1])
+                    foot_process_perim[i] = np.mean(fp_t[:, 2])
+                    foot_process_circ[i] = np.mean(fp_t[:, 3])
+                else:
+                    foot_process_area[i] = 0
+                    foot_process_perim[i] = 0
+                    foot_process_circ[i] = 0
+            t["FP Area"] = foot_process_area
+            t["FP Perim."] = foot_process_perim
+            t["FP Circ."] = foot_process_circ
+        else:
+            suffix = "_fp_params.csv"
+            files = []
+            for file_path in os.listdir(param_dr):
+                if file_path.endswith(suffix):
+                    filename = os.path.basename(file_path)
+                    fl = filename.replace(suffix, '')
+                    files.append(fl)
+
+            foot_process_area = np.zeros(len(files))
+            foot_process_perim = np.zeros(len(files))
+            foot_process_circ = np.zeros(len(files))
+
+            for i in range(len(files)):
+                fl = files[i]
+                fp_t = np.loadtxt(os.path.join(param_dr,
+                                               fl + "_fp_params.csv"),
+                                  delimiter="\t", skiprows=1, ndmin=2)
+                if fp_t.size > 0:
+                    foot_process_area[i] = np.mean(fp_t[:, 1])
+                    foot_process_perim[i] = np.mean(fp_t[:, 2])
+                    foot_process_circ[i] = np.mean(fp_t[:, 3])
+                else:
+                    foot_process_area[i] = 0
+                    foot_process_perim[i] = 0
+                    foot_process_circ[i] = 0
+
+            t["file"] = files
+            t["FP Area"] = foot_process_area
+            t["FP Perim."] = foot_process_perim
+            t["FP Circ."] = foot_process_circ
+
         t.to_csv(os.path.join(param_dr, "all_params.csv"), sep="\t")

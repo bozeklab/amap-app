@@ -111,8 +111,6 @@ class AMAPEngine:
         logging.info(LOG_START_PROC_SIGNATURE)
         logging.info(f"Inference started for {self.project_name}")
 
-        import pudb.remote
-        pudb.remote.set_trace(host='0.0.0.0', port=6900)
         self.start_time = time.time()
 
         self.inference_procedure()
@@ -164,7 +162,8 @@ class AMAPEngine:
         unet_model.eval()
 
         logging.debug("Loading the checkpoint.")
-        model_checkpoint_path = "res/model/cp_10940.pth"
+        # model_checkpoint_path = "res/model/cp_10940.pth"
+        model_checkpoint_path = "res/model/cp_11128.pth"
         unet_model.load_state_dict(torch.load(model_checkpoint_path,
                                               map_location=torch.device('cpu')))
 

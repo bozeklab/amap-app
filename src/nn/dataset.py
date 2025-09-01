@@ -56,6 +56,9 @@ class PredictionDataset(Dataset):
     def read_file(self, fn):
         img = tifffile.imread(os.path.join(self.source_directory, fn))
 
+        # import pudb.remote
+        # pudb.remote.set_trace(host='0.0.0.0', port=6900)
+
         # Choosing the channel and max projecting if needed
 
         if self.configs['is_stacked']:
@@ -64,7 +67,7 @@ class PredictionDataset(Dataset):
                     img = np.max(img, axis=1)
                 else:
                     img = np.max(img, axis=0)
-            if len(img.shape) == 3:
+            elif len(img.shape) == 3:
                 img = np.max(img, axis=0)
 
         if len(img.shape) > 2:

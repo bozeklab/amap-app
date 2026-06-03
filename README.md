@@ -151,6 +151,17 @@ Select the project in the list to enable its settings. Settings are split into r
 * **Old ROI algorithm (AMAP)** — Use the original AMAP ROI detection instead of the AMAP-APP method. Leave unchecked for the AMAP-APP algorithm.
 * **SD length analysis** — Adds slit-diaphragm (SD) length analysis to the morphometry output. Enabling it shows a confirmation dialog. **Important:** this feature may conflict with a patent filed after the AMAP paper was published. Users are solely responsible for ensuring compliance with all applicable intellectual-property regulations and legal requirements.
 * **Use GPU** — When enabled and a CUDA-capable GPU is available, inference runs on the GPU; otherwise it falls back to the CPU. Disable to force CPU execution.
+* **Customize…** — Opens a dialog to view and adjust the post-processing and ROI parameters for the project. These were chosen empirically in the AMAP study and are used here as defaults, so you normally do not need to change them; advanced users can tweak them for unusual hardware or samples. The deep-learning model itself is **not** exposed here — to adapt the model, fine-tune it in the [AMAP repository](https://github.com/bozeklab/amap) and load the resulting weights with **Model checkpoint** above. Each parameter shows an inline description in the dialog:
+    * **Min foot-process size (px)** — smallest foot process kept; smaller connected components are discarded as noise (default `25`).
+    * **ROI contour min area (px)** — smallest ROI outline drawn when outlining the region of interest (default `4000`).
+    * **ROI dilation iterations** — morphological dilation steps that merge slit-diaphragm structures into one continuous ROI (default `25`; new ROI algorithm only).
+    * **ROI erosion iterations** — morphological erosion steps that tighten/smooth the ROI boundary (default `8`; new ROI algorithm only).
+    * **ROI min component area (px)** — smallest connected ROI region kept; smaller regions are removed as noise (default `5000`; new ROI algorithm only).
+
+  Pixel thresholds are measured on images resampled to the fixed 0.0227 µm/px grid, so each pixel value corresponds to a fixed physical size. The ROI-specific parameters are disabled when **Old ROI algorithm** is selected (that algorithm uses its own fixed values); the post-processing parameters stay editable. Changes are saved to the project's `conf.json`, and **Reset to defaults** restores the validated values.
+
+<p align="center"><img src="res/images/customize_dialog.jpg" alt="Customize parameters" width="500"/></p>
+<!-- IMAGE (TO ADD): the "Customize…" dialog with a project selected, showing the parameter spin boxes and their inline descriptions. Save as res/images/customize_dialog.jpg. -->
 
 ### 3. Run the analysis
 
@@ -164,7 +175,14 @@ Select the project in the list to enable its settings. Settings are split into r
 * Use the **Segmentation** and **Morphometry** buttons to open the output folders.
 
 <p align="center"><img src="res/images/results.jpg" alt="Results" width="500"/></p>
-<!-- IMAGE: the "Results" row with the Segmentation / Morphometry buttons, ideally beside an example output. Existing file res/images/results.jpg reused. -->
+<!-- IMAGE: the "Results" row with the Segmentation / Morphometry / Reset buttons, ideally beside an example output. The existing res/images/results.jpg predates the "Reset" button — recapture to include it. -->
+
+### 5. Re-run a project
+
+When a project has finished, its settings are locked. To process it again — for example after selecting a different **Model checkpoint** or adjusting a **Customize…** parameter — click **Reset** in the results row. After a confirmation prompt, this deletes the project's results (the contents of `segmentation/`, `npy/` and `morphometry/`) and re-enables the settings and the **Start** button so the project can be re-run.
+
+<p align="center"><img src="res/images/reset.jpg" alt="Reset" width="500"/></p>
+<!-- IMAGE (TO ADD): the "Reset" button in the results row (and/or its confirmation dialog). Save as res/images/reset.jpg. -->
 
 ## Outputs
 

@@ -56,11 +56,14 @@ class CustomizationDialog(QDialog):
             spin.setRange(lo, hi)
             spin.setSingleStep(step)
             spin.setValue(int(configs.get(key, default)))
-            spin.setToolTip(desc)            # hover description over the value
+            # Wrap as fixed-width rich text so the tooltip word-wraps instead of rendering
+            # as one long unreadable line.
+            tip = f"<div style='width: 260px; white-space: normal;'>{desc}</div>"
+            spin.setToolTip(tip)             # hover description over the value
             if is_old_roi and not is_psp:
                 spin.setEnabled(False)
             row_label = QLabel(label)
-            row_label.setToolTip(desc)       # ...and over the label
+            row_label.setToolTip(tip)        # ...and over the label
             self._spins[key] = spin
             form.addRow(row_label, spin)
         layout.addLayout(form)

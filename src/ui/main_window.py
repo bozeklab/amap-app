@@ -20,6 +20,7 @@ from src.configs import PROJECT_DIR, HEADER_IMAGE, APP_ICON
 from src.engine import AMAPEngine
 from src.morph import AMAPMorphometry
 from src.ui.ui_mainwindow import Ui_MainWindow
+from src.ui.customization_dialog import CustomizationDialog
 from src.utils import filter_tiff_files, analyze_tiff_files, create_progress_dialog, create_message_box, \
     open_dir_in_browser, cpu_threads_from_level, cpu_percent_from_level, batch_size_from_level, suggested_workers, \
     classify_project_inputs
@@ -216,6 +217,8 @@ class MainWindow(QMainWindow):
         self.check_include_sd.toggled.connect(self.checkbox_include_sd_change)
         self.check_use_gpu = self.findChild(QCheckBox, "check_use_gpu")
         self.check_use_gpu.stateChanged.connect(self.checkbox_use_gpu_change)
+        self.button_customize = self.findChild(QPushButton, "button_customize")
+        self.button_customize.clicked.connect(self.open_customization_dialog)
 
         # Handling checkpoint combo box
         self.combo_checkpoint = self.findChild(QComboBox, "combo_checkpoint")
@@ -296,6 +299,8 @@ class MainWindow(QMainWindow):
         self.check_use_gpu.setChecked(project_configs.get('use_gpu', True))
         self.check_use_gpu.setEnabled(True)
 
+        self.button_customize.setEnabled(True)
+
         checkpoint = project_configs.get('model_checkpoint', 'cp_10940.pth')
         idx = self.combo_checkpoint.findText(checkpoint)
         if idx >= 0:
@@ -316,6 +321,7 @@ class MainWindow(QMainWindow):
         self.check_old_roi.setEnabled(not project_configs['is_morphometry_finished'])
         self.check_include_sd.setEnabled(not project_configs['is_morphometry_finished'])
         self.check_use_gpu.setEnabled(not project_configs['is_morphometry_finished'])
+        self.button_customize.setEnabled(not project_configs['is_morphometry_finished'])
         self.spin_channel.setEnabled(not project_configs['is_morphometry_finished'])
         self.combo_checkpoint.setEnabled(not project_configs['is_morphometry_finished'])
         self.slider_workers.setEnabled(not project_configs['is_morphometry_finished'])
@@ -393,6 +399,20 @@ class MainWindow(QMainWindow):
         project_configs = self.load_project_configuration(project_configs_path)
         project_configs['use_gpu'] = True if _value == 2 else False
         self.save_project_configuration(project_configs_path, project_configs)
+
+    # Opens the customization dialog to edit ROI/post-processing hyperparameters
+    def open_customization_dialog(self):
+        if self.is_disabled or self.is_loading:
+            return
+        project_name = self.list_projects.currentItem().text()
+        project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
+        project_configs = self.load_project_configuration(project_configs_path)
+        dialog = CustomizationDialog(project_configs,
+                                     project_configs.get('is_old_roi', False),
+                                     self)
+        if dialog.exec():
+            project_configs.update(dialog.values())
+            self.save_project_configuration(project_configs_path, project_configs)
 
     # Populates the checkpoint combo box with available model files
     def populate_checkpoint_combo(self):

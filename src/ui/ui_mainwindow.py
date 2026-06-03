@@ -281,6 +281,12 @@ class Ui_MainWindow(object):
 
         self.grid_configs.addWidget(self.check_old_roi, 3, 0, 1, 1)
 
+        self.button_customize = QPushButton(self.frame_projects)
+        self.button_customize.setObjectName(u"button_customize")
+        self.button_customize.setEnabled(False)
+
+        self.grid_configs.addWidget(self.button_customize, 3, 1, 1, 1)
+
         self.check_include_sd = QCheckBox(self.frame_projects)
         self.check_include_sd.setObjectName(u"check_include_sd")
         self.check_include_sd.setEnabled(False)
@@ -393,6 +399,7 @@ class Ui_MainWindow(object):
         self.label_channel.setText(QCoreApplication.translate("MainWindow", u"Target channel", None))
         self.check_stacked.setText(QCoreApplication.translate("MainWindow", u"Stacked", None))
         self.check_old_roi.setText(QCoreApplication.translate("MainWindow", u"Old ROI algorithm (AMAP)", None))
+        self.button_customize.setText(QCoreApplication.translate("MainWindow", u"Customize…", None))
         self.check_include_sd.setText(QCoreApplication.translate("MainWindow", u"SD length analysis", None))
         self.check_use_gpu.setText(QCoreApplication.translate("MainWindow", u"Use GPU", None))
         self.label_input_info.setText("")

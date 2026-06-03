@@ -4,12 +4,13 @@ values), so a fresh project behaves exactly as before. The deep-learning model a
 resolution/patch settings are intentionally NOT exposed (model adaptation is done by fine-tuning in
 the AMAP repository and loading the resulting checkpoint via the checkpoint selector).
 
-ROI-algorithm parameters are disabled when the *old* ROI algorithm is selected, because that
-algorithm uses its own fixed internal values; the post-processing parameters remain editable since
-they apply to both ROI algorithms.
+Each parameter shows an always-visible description beneath it (no tooltips), so the help text is
+readable without hovering. ROI-algorithm parameters are disabled when the *old* ROI algorithm is
+selected (that algorithm uses its own fixed values); post-processing parameters stay editable.
 """
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QFormLayout, QSpinBox, QDialogButtonBox, QLabel, QPushButton,
+    QDialog, QVBoxLayout, QHBoxLayout, QSpinBox, QDialogButtonBox, QLabel, QPushButton,
+    QScrollArea, QWidget, QFrame,
 )
 
 # key -> (label, default, min, max, step, is_psp, description)
@@ -41,41 +42,69 @@ class CustomizationDialog(QDialog):
     def __init__(self, configs, is_old_roi, parent=None):
         super().__init__(parent)
         self.setWindowTitle("Customize processing parameters")
+        self.setMinimumWidth(440)
         self._spins = {}
 
-        layout = QVBoxLayout(self)
+        outer = QVBoxLayout(self)
         if is_old_roi:
-            note = QLabel("Old ROI algorithm selected — ROI parameters are fixed by that algorithm; "
-                          "only the post-processing parameters below are editable.")
+            note = QLabel("Old ROI algorithm selected — ROI parameters are fixed by that "
+                          "algorithm; only the post-processing parameters below are editable.")
             note.setWordWrap(True)
-            layout.addWidget(note)
+            note.setStyleSheet("font-weight: bold;")
+            outer.addWidget(note)
 
-        form = QFormLayout()
-        for key, label, default, lo, hi, step, is_psp, desc in PARAMS:
+        # scrollable body so the dialog stays a sensible height with all descriptions visible
+        body = QWidget()
+        col = QVBoxLayout(body)
+        for i, (key, label, default, lo, hi, step, is_psp, desc) in enumerate(PARAMS):
             spin = QSpinBox()
             spin.setRange(lo, hi)
             spin.setSingleStep(step)
             spin.setValue(int(configs.get(key, default)))
-            # Wrap as fixed-width rich text so the tooltip word-wraps instead of rendering
-            # as one long unreadable line.
-            tip = f"<div style='width: 260px; white-space: normal;'>{desc}</div>"
-            spin.setToolTip(tip)             # hover description over the value
-            if is_old_roi and not is_psp:
-                spin.setEnabled(False)
-            row_label = QLabel(label)
-            row_label.setToolTip(tip)        # ...and over the label
+            spin.setFixedWidth(130)
+            enabled = not (is_old_roi and not is_psp)
+            spin.setEnabled(enabled)
             self._spins[key] = spin
-            form.addRow(row_label, spin)
-        layout.addLayout(form)
 
+            row = QHBoxLayout()
+            name = QLabel(label)
+            name.setStyleSheet("font-weight: bold;")
+            row.addWidget(name)
+            row.addStretch(1)
+            row.addWidget(spin)
+            col.addLayout(row)
+
+            description = QLabel(desc)
+            description.setWordWrap(True)
+            description.setStyleSheet("color: palette(mid); font-size: 11px;")
+            description.setContentsMargins(0, 0, 0, 6)
+            if not enabled:
+                description.setEnabled(False)
+            col.addWidget(description)
+
+            if i < len(PARAMS) - 1:
+                line = QFrame()
+                line.setFrameShape(QFrame.HLine)
+                line.setFrameShadow(QFrame.Sunken)
+                col.addWidget(line)
+
+        col.addStretch(1)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(body)
+        scroll.setFrameShape(QFrame.NoFrame)
+        outer.addWidget(scroll)
+
+        footer = QHBoxLayout()
         reset = QPushButton("Reset to defaults")
         reset.clicked.connect(self._reset_defaults)
-        layout.addWidget(reset)
-
+        footer.addWidget(reset)
+        footer.addStretch(1)
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.accept)
         buttons.rejected.connect(self.reject)
-        layout.addWidget(buttons)
+        footer.addWidget(buttons)
+        outer.addLayout(footer)
 
     def _reset_defaults(self):
         for key, spin in self._spins.items():

@@ -164,6 +164,9 @@ class MainWindow(QMainWindow):
         self.button_results_morphometry = self.findChild(QPushButton, "button_result_morphometry")
         self.button_results_morphometry.clicked.connect(self.morphometry_result_click)
 
+        self.button_reset = self.findChild(QPushButton, "button_reset")
+        self.button_reset.clicked.connect(self.reset_project_results)
+
         # Handling Add Project button's click
         self.button_add_project = self.findChild(QPushButton, "button_add_project")
         self.button_add_project.clicked.connect(self.add_project_click)
@@ -315,6 +318,9 @@ class MainWindow(QMainWindow):
         self.label_results.setEnabled(True)
         self.button_results_segmentation.setEnabled(project_configs['is_segmentation_finished'])
         self.button_results_morphometry.setEnabled(project_configs['is_morphometry_finished'])
+        # Reset is available whenever there are results to clear (lets the project be re-run).
+        self.button_reset.setEnabled(project_configs['is_segmentation_finished']
+                                     or project_configs['is_morphometry_finished'])
 
         self.button_start.setEnabled(not project_configs['is_morphometry_finished'])
         self.check_stacked.setEnabled(not project_configs['is_morphometry_finished'])
@@ -413,6 +419,44 @@ class MainWindow(QMainWindow):
         if dialog.exec():
             project_configs.update(dialog.values())
             self.save_project_configuration(project_configs_path, project_configs)
+
+    # Deletes all results so the project can be re-run (asks for confirmation first)
+    def reset_project_results(self):
+        if self.is_disabled or self.is_loading:
+            return
+        project_name = self.list_projects.currentItem().text()
+        questionBox = QMessageBox()
+        questionBox.setWindowIcon(self.app_icon)
+        questionBox.setFont(QFont("Times", 14))
+        questionBox.setIcon(QMessageBox.Warning)
+        answer = questionBox.question(
+            self, '',
+            f'All results for "{project_name}" (segmentation, morphometry and intermediate '
+            f'files) will be deleted so the project can be re-run.\n\nAre you sure?',
+            questionBox.Yes | questionBox.No)
+        if answer != questionBox.Yes:
+            return
+
+        project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
+        project_configs = self.load_project_configuration(project_configs_path)
+        for key in ('result_segmentation_dir', 'npy_dir', 'result_morphometry_dir'):
+            directory = project_configs.get(key)
+            if directory and os.path.isdir(directory):
+                for entry in os.listdir(directory):
+                    path = os.path.join(directory, entry)
+                    try:
+                        if os.path.isdir(path):
+                            shutil.rmtree(path)
+                        else:
+                            os.remove(path)
+                    except OSError:
+                        logging.exception("Could not remove %s", path)
+
+        project_configs['is_segmentation_finished'] = False
+        project_configs['is_morphometry_finished'] = False
+        self.save_project_configuration(project_configs_path, project_configs)
+        # Refresh the UI for this project so it becomes runnable again.
+        self.activate_selected_project(self.list_projects.currentItem())
 
     # Populates the checkpoint combo box with available model files
     def populate_checkpoint_combo(self):
@@ -624,6 +668,11 @@ class MainWindow(QMainWindow):
                     else:
                         self.button_start.setEnabled(True)
 
+                    # Reset is available once results exist; customization follows the run state.
+                    self.button_reset.setEnabled(project_configs['is_segmentation_finished']
+                                                 or project_configs['is_morphometry_finished'])
+                    self.button_customize.setEnabled(not project_configs['is_morphometry_finished'])
+
                     self.UI_state = None
                     self.project_thread = None
                     self.progress_dialog = None
@@ -814,6 +863,8 @@ class MainWindow(QMainWindow):
         self.button_start.setEnabled(False)
         self.button_stop.setEnabled(False)
         self.button_remove_project.setEnabled(False)
+        self.button_reset.setEnabled(False)
+        self.button_customize.setEnabled(False)
         self.label_results.setEnabled(False)
         self.button_results_segmentation.setEnabled(False)
         self.button_results_morphometry.setEnabled(False)

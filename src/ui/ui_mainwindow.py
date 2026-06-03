@@ -331,6 +331,12 @@ class Ui_MainWindow(object):
 
         self.horizontal_result.addWidget(self.button_result_morphometry)
 
+        self.button_reset = QPushButton(self.frame_projects)
+        self.button_reset.setObjectName(u"button_reset")
+        self.button_reset.setEnabled(False)
+
+        self.horizontal_result.addWidget(self.button_reset)
+
         self.horizontalSpacer_2 = QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
 
         self.horizontal_result.addItem(self.horizontalSpacer_2)
@@ -406,6 +412,7 @@ class Ui_MainWindow(object):
         self.label_results.setText(QCoreApplication.translate("MainWindow", u"Results:", None))
         self.button_result_segmentation.setText(QCoreApplication.translate("MainWindow", u"Segmentation", None))
         self.button_result_morphometry.setText(QCoreApplication.translate("MainWindow", u"Morphometry", None))
+        self.button_reset.setText(QCoreApplication.translate("MainWindow", u"Reset", None))
         self.label_cpu_allocation.setText(QCoreApplication.translate("MainWindow", u"CPU allocation:", None))
         self.button_stop.setText(QCoreApplication.translate("MainWindow", u"Stop", None))
         self.button_start.setText(QCoreApplication.translate("MainWindow", u"Start", None))

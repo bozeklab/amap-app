@@ -107,9 +107,13 @@ class AMAPMorphometry:
                     csv_file.close()
 
                 sd = predictions[1, :, :]
-                roi_mask, sd = get_ROI_from_predictions(predictions[1, :, :], sd.shape, self.configs["is_old_roi"])
+                roi_mask, sd = get_ROI_from_predictions(
+                    predictions[1, :, :], sd.shape, self.configs["is_old_roi"],
+                    dilation_iters=self.configs.get('roi_dilation_iters', 25),
+                    erosion_iters=self.configs.get('roi_erosion_iters', 8),
+                    min_area=self.configs.get('roi_min_area', 5000))
 
-                min_area_threshold = 4000
+                min_area_threshold = self.configs.get('roi_contour_min_area', 4000)
                 contours, _ = cv2.findContours(roi_mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_NONE)
                 contours = [contour for contour in contours if cv2.contourArea(contour) > min_area_threshold]
                 contours_mask = np.zeros_like(sd)

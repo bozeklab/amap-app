@@ -380,8 +380,11 @@ def get_ROI_AMAP(predictions, img_sh):
     return mask_roi, sd
 
 
-def get_ROI_AMAPAPP(predictions, img_sh):
-    MIN_AREA = 5000
+def get_ROI_AMAPAPP(predictions, img_sh, dilation_iters=25, erosion_iters=8, min_area=5000):
+    # Morphology iteration counts and the minimum ROI area were chosen empirically in the AMAP
+    # study and replicated here; exposed as user-tweakable advanced parameters whose defaults
+    # preserve the validated behaviour.
+    MIN_AREA = min_area
     predictions = cv2.resize(predictions,
                              img_sh,
                              interpolation=cv2.INTER_NEAREST)
@@ -400,10 +403,10 @@ def get_ROI_AMAPAPP(predictions, img_sh):
     mask_roi[mask_roi == 1] = 0
     mask_roi = cv2.dilate(mask_roi,
                           dil_kernel,
-                          iterations=25)
+                          iterations=dilation_iters)
     mask_roi = cv2.erode(mask_roi,
                          ero_kernel,
-                         iterations=8)
+                         iterations=erosion_iters)
 
     # Find connected components
     nb_components, output, stats, centroids = cv2.connectedComponentsWithStats(mask_roi, connectivity=8)
@@ -428,11 +431,15 @@ def get_ROI_AMAPAPP(predictions, img_sh):
     return mask_roi, sd
 
 
-def get_ROI_from_predictions(predictions, img_sh, is_old):
+def get_ROI_from_predictions(predictions, img_sh, is_old,
+                             dilation_iters=25, erosion_iters=8, min_area=5000):
     if is_old:
         return get_ROI_AMAP(predictions, img_sh)
     else:
-        return get_ROI_AMAPAPP(predictions, img_sh)
+        return get_ROI_AMAPAPP(predictions, img_sh,
+                               dilation_iters=dilation_iters,
+                               erosion_iters=erosion_iters,
+                               min_area=min_area)
 
 
 def open_dir_in_browser(_path):

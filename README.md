@@ -1,11 +1,11 @@
 # AMAP Application
 
-AMAP-APP is a desktop application that uses deep learning to perform [segmentation and morphometry quantification of fluorescent microscopy images of podocytes](https://www.kidney-international.org/article/S0085-2538(23)00180-1/fulltext). It runs comfortably on the CPU; a GPU is **optional** and, when available, can accelerate inference (toggled per project).
+AMAP-APP is a desktop application that uses deep learning to perform [segmentation and morphometry quantification of fluorescent microscopy images of podocytes](https://www.kidney-international.org/article/S0085-2538(23)00180-1/fulltext). It runs comfortably on the CPU; a GPU is **optional** and, when available, can accelerate inference.
 
 ![AMAP Results](res/images/header.png)
 <!-- IMAGE: top banner / hero image. Existing file res/images/header.png is reused. Replace if you want an updated banner. -->
 
-This application is a reimplementation of the [original research](https://github.com/bozeklab/amap) with modifications to the instance-segmentation algorithm aimed at improving CPU efficiency. Instead of the original pixel-embedding clustering, AMAP-APP derives instances with PyTorch operations and a Connected Component Labeling (CCL) algorithm, achieving comparable results.
+This application is a reimplementation of the [original research](https://github.com/bozeklab/amap) with modifications to the instance-segmentation algorithm aimed at improving compute efficiency. Instead of the original pixel-embedding clustering, AMAP-APP derives instances with PyTorch operations and a Connected Component Labeling (CCL) algorithm, achieving comparable results.
 
 AMAP-APP is cross-platform, implemented in Python 3.9, and primarily tested on Linux (with lighter testing on Windows and Mac). Minor visual inconsistencies may appear between platforms but do not affect functionality.
 
@@ -23,7 +23,7 @@ The full list is in [requirements.txt](./requirements.txt); the major dependenci
 
 #### Hardware
 
-* **Minimum:** 4 GB RAM, 2 CPU cores.
+* **Minimum:** 8 GB RAM, 4 CPU cores.
 * **Recommended:** 16 GB RAM, 8 CPU cores.
 * **Optional:** a CUDA-capable NVIDIA GPU. Inference uses it automatically when *Use GPU* is enabled and a compatible GPU is detected; otherwise AMAP-APP runs on the CPU.
 
@@ -144,25 +144,34 @@ Select the project in the list to enable its settings. Settings are split into r
 **Model and data options:**
 
 * **Model checkpoint** — Selects the trained model weights. AMAP-APP ships with `cp_10940.pth` (default) and an additional checkpoint trained for IgA Nephropathy, `cp_12940.pth`. Any `.pth` file placed in `res/model/` is offered in this list.
-* **Stacked** and **Target channel** — These two controls are **enabled only when they apply to your data**, based on the input AMAP detects when you select the project (see the status line described below):
-    * **Mixed dimensionality**, or all images **2-D** → both disabled; AMAP handles the input automatically (a 2-D image is used directly; mixed inputs fall back to an automatic maximum projection).
+* **Stacked** and **Target channel** — These two controls are **enabled only when they apply to your data**, based on the input AMAP-APP detects when you select the project (see the status line described below):
+    * **Mixed dimensionality**, or all images **2-D** → both disabled; AMAP-APP handles the input automatically (a 2-D image is used directly; mixed inputs fall back to an automatic maximum projection).
     * All images **3-D** → both enabled. A 3-D input can be either a *z-stack* or a *multi-channel* image, so you choose: tick **Stacked** to maximum-project the stack, or leave it unticked to analyse a single channel chosen with **Target channel**.
     * All images **4-D** → **Stacked** is forced on and locked (a 4-D input is always a multi-channel stack); AMAP-APP maximum-projects the stack and then analyses the channel chosen with **Target channel**.
   When **Target channel** is active, its range is limited to the actual number of channels in your images, and it defaults to `0`.
-* **Old ROI algorithm (AMAP)** — Use the original AMAP ROI detection instead of the AMAP-APP method. Leave unchecked for the AMAP-APP algorithm.
+* **Old ROI algorithm (AMAP)** — Selects which region-of-interest (ROI) detector is used. Unchecked (default) uses the AMAP-APP ROI algorithm; checked uses the original AMAP method. The ROI is the area of the image treated as podocyte tissue, and it determines where the slit-diaphragm length density is measured (see [ROI and post-processing configuration](#roi-and-post-processing-configuration) below).
 * **SD length analysis** — Adds slit-diaphragm (SD) length analysis to the morphometry output. Enabling it shows a confirmation dialog. **Important:** this feature may conflict with a patent filed after the AMAP paper was published. Users are solely responsible for ensuring compliance with all applicable intellectual-property regulations and legal requirements.
 * **Use GPU** — When enabled and a CUDA-capable GPU is available, inference runs on the GPU; otherwise it falls back to the CPU. Disable to force CPU execution.
-* **Customize…** — Opens a dialog to view and adjust the post-processing and ROI parameters for the project. These were chosen empirically in the AMAP study and are used here as defaults, so you normally do not need to change them; advanced users can tweak them for unusual hardware or samples. The deep-learning model itself is **not** exposed here — to adapt the model, fine-tune it in the [AMAP repository](https://github.com/bozeklab/amap) and load the resulting weights with **Model checkpoint** above. Each parameter shows an inline description in the dialog:
-    * **Min foot-process size (px)** — smallest foot process kept; smaller connected components are discarded as noise (default `25`).
-    * **ROI contour min area (px)** — smallest ROI outline drawn when outlining the region of interest (default `4000`).
-    * **ROI dilation iterations** — morphological dilation steps that merge slit-diaphragm structures into one continuous ROI (default `25`; new ROI algorithm only).
-    * **ROI erosion iterations** — morphological erosion steps that tighten/smooth the ROI boundary (default `8`; new ROI algorithm only).
-    * **ROI min component area (px)** — smallest connected ROI region kept; smaller regions are removed as noise (default `5000`; new ROI algorithm only).
+* **Customize…** — Opens a dialog to view and adjust the ROI and post-processing parameters for the project. These are validated defaults; advanced users can change them (see [ROI and post-processing configuration](#roi-and-post-processing-configuration) below). The deep-learning model itself is **not** exposed here — to adapt the model, fine-tune it in the [AMAP repository](https://github.com/bozeklab/amap) and load the resulting weights with **Model checkpoint** above.
 
-  Pixel thresholds are measured on images resampled to the fixed 0.0227 µm/px grid, so each pixel value corresponds to a fixed physical size. The ROI-specific parameters are disabled when **Old ROI algorithm** is selected (that algorithm uses its own fixed values); the post-processing parameters stay editable. Changes are saved to the project's `conf.json`, and **Reset to defaults** restores the validated values.
+#### ROI and post-processing configuration
+
+After the network classifies each pixel (background, foot process, or slit diaphragm), AMAP-APP derives two things from that map: the individual **foot-process instances** (used for area/perimeter/circularity), and the **region of interest (ROI)** — the contiguous podocyte area over which slit-diaphragm length density is measured. The ROI is built by *dilating* the detected structures to merge them into one continuous region, *eroding* to tighten the boundary, and discarding components that are too small to be real tissue. These steps rely on a few numeric thresholds.
+
+Those thresholds were chosen empirically in the AMAP study and are replicated here as defaults, so you normally do not need to touch them. For unusual hardware or sample types, the **Customize…** button opens a dialog to adjust them; each field carries an inline description, and **Reset to defaults** restores the validated values. Changes are saved to the project's `conf.json`.
 
 <p align="center"><img src="res/images/customize_dialog.jpg" alt="Customize parameters" width="500"/></p>
 <!-- IMAGE (TO ADD): the "Customize…" dialog with a project selected, showing the parameter spin boxes and their inline descriptions. Save as res/images/customize_dialog.jpg. -->
+
+| Parameter | Default | Applies to | What it controls |
+|---|---|---|---|
+| **Min foot-process size (px)** | `25` | Post-processing (both ROI modes) | Smallest foot-process instance kept; smaller connected components are discarded as noise. |
+| **ROI contour min area (px)** | `4000` | Post-processing (both ROI modes) | Smallest ROI outline drawn when delineating the region of interest; smaller contours are ignored. |
+| **ROI dilation iterations** | `25` | New ROI algorithm only | Morphological dilation steps that merge slit-diaphragm structures into one continuous ROI. Higher → larger, more merged region. |
+| **ROI erosion iterations** | `8` | New ROI algorithm only | Morphological erosion steps applied after dilation to tighten and smooth the ROI boundary. Higher → tighter ROI. |
+| **ROI min component area (px)** | `5000` | New ROI algorithm only | Smallest connected ROI region kept; smaller regions are removed as noise. |
+
+All thresholds are measured in pixels on images resampled to the fixed **0.0227 µm/px** grid, so each pixel value maps to a fixed physical size (e.g. `25 px ≈ 0.013 µm²`); this is why thresholds are specified in pixels rather than microns. When **Old ROI algorithm** is selected, the three ROI-specific parameters are disabled (that algorithm uses its own fixed values) while the two post-processing parameters remain editable.
 
 ### 3. Run the analysis
 

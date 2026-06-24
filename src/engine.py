@@ -53,7 +53,7 @@ class AMAPEngine:
         self.mem_alloc_value = _configs['mem_allocation'] + 1
         self.is_stacked = _configs['is_stacked']
         self.target_channel = _configs['target_channel']
-        self.model_checkpoint = _configs.get('model_checkpoint', 'amap.pth')
+        self.model_checkpoint = _configs.get('model_checkpoint', 'amap-original.pth')
         self.use_gpu = _configs.get('use_gpu', True)
         self.num_workers = _configs.get('num_workers', 4)
 

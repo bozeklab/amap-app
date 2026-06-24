@@ -158,7 +158,7 @@ Select the project in the list to enable its settings. Settings are split into r
 
 A *checkpoint* is a set of trained network weights. AMAP-APP loads checkpoints from `res/model/` and lists every `.pth` file there in the **Model checkpoint** dropdown, so switching or adding a model is just a matter of copying a file — no code changes. Two checkpoints ship with the application:
 
-* **`amap.pth`** *(default)* — the original AMAP model, trained as described in the [AMAP publication](https://www.kidney-international.org/article/S0085-2538(23)00180-1/fulltext). Use this for general podocyte foot-process segmentation.
+* **`amap-original.pth`** *(default)* — the original AMAP model, trained as described in the [AMAP publication](https://www.kidney-international.org/article/S0085-2538(23)00180-1/fulltext). Use this for general podocyte foot-process segmentation.
 * **`IgA.pth`** — a checkpoint fine-tuned for IgA nephropathy ([medRxiv 2026](https://www.medrxiv.org/content/10.64898/2026.03.30.26349728v1.full)).
 
 The IgA checkpoint is included as a **proof of concept**: the deep-learning model in AMAP-APP is intentionally fixed for reproducibility, but it is not a dead end. Users who need a model adapted to a different tissue, stain, or pathology can fine-tune or train one in the [AMAP repository](https://github.com/bozeklab/amap) and then use it in AMAP-APP simply by copying the resulting `.pth` file into `res/model/` and selecting it from the **Model checkpoint** dropdown.

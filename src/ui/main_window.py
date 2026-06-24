@@ -306,8 +306,17 @@ class MainWindow(QMainWindow):
 
         checkpoint = project_configs.get('model_checkpoint', 'amap-original.pth')
         idx = self.combo_checkpoint.findText(checkpoint)
-        if idx >= 0:
-            self.combo_checkpoint.setCurrentIndex(idx)
+        if idx < 0:
+            # The saved checkpoint is no longer available (e.g. the file was renamed
+            # or removed). Fall back to the default if present, otherwise the first
+            # available checkpoint, and persist it so the config and the dropdown
+            # stay in sync (a stale name would otherwise crash inference on Start).
+            idx = self.combo_checkpoint.findText('amap-original.pth')
+            if idx < 0:
+                idx = 0
+            project_configs['model_checkpoint'] = self.combo_checkpoint.itemText(idx)
+            self.save_project_configuration(project_configs_path, project_configs)
+        self.combo_checkpoint.setCurrentIndex(idx)
         self.combo_checkpoint.setEnabled(True)
         self.label_checkpoint.setEnabled(True)
 

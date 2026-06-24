@@ -17,8 +17,9 @@ The full list is in [requirements.txt](./requirements.txt); the major dependenci
 * [PySide6](https://pypi.org/project/PySide6/) — Qt bindings for the user interface.
 * [PyTorch](https://pytorch.org/) — model inference (and training).
 * [tifffile](https://pypi.org/project/tifffile/) — reading TIFF inputs.
-* [OpenCV](https://pypi.org/project/opencv-python/), [NumPy](https://numpy.org/), [scikit-image](https://scikit-image.org/) and [SciPy](https://scipy.org/) — image processing and morphometry.
+* [OpenCV](https://pypi.org/project/opencv-python/), [NumPy](https://numpy.org/), [scikit-image](https://scikit-image.org/), [SciPy](https://scipy.org/) and [Pillow](https://pypi.org/project/Pillow/) — image processing, morphometry and result visualizations.
 * [pandas](https://pandas.pydata.org/) — assembling the morphometry result tables.
+* [psutil](https://pypi.org/project/psutil/) — detecting CPU/RAM to drive the resource sliders.
 
 #### Hardware
 
@@ -113,7 +114,7 @@ python main.py
 
 ## Using AMAP-APP
 
-AMAP processes images in batches. A **project** is a batch of images plus its configuration. AMAP currently supports **TIFF** files only, and all images in a project should share the same dimensionality. On creation, AMAP inspects the images, reports their rank/shape, and warns if they are inconsistent (it still proceeds, relying on a maximum projection).
+AMAP-APP processes images in batches. A **project** is a batch of images plus its configuration. Only **TIFF** files are supported, and all images in a project should share the same dimensionality. On creation, AMAP-APP inspects the images, reports their rank/shape, and warns if they are inconsistent (it still proceeds, falling back to a maximum projection).
 
 ### 1. Create a project
 
@@ -122,14 +123,14 @@ AMAP processes images in batches. A **project** is a batch of images plus its co
 <p align="center"><img src="res/images/add_button.jpg" alt="Add Project" width="500"/></p>
 <!-- IMAGE: the project list with the "Add" / "Remove" buttons. Existing file res/images/add_button.jpg reused; update if the layout changed. -->
 
-* Select the directory containing the TIFF files. AMAP copies the images into a new project folder under `projects/<name>/` and stores its settings in `projects/<name>/conf.json`.
+* Select the directory containing the TIFF files. AMAP-APP copies the images into a new project folder under `projects/<name>/` and stores its settings in `projects/<name>/conf.json`.
 
 <p align="center"><img src="res/images/select_project.jpg" alt="Select Project" width="500"/></p>
 <!-- IMAGE: the OS directory-picker dialog. Existing file res/images/select_project.jpg reused. -->
 
 ### 2. Configure the project
 
-Select the project in the list to enable its settings. Settings are split into resource sliders (left) and model/data options (right). Each change is saved to the project's `conf.json` immediately. A small status line at the bottom of the panel summarises the detected input (how many images, their dimensionality and channel count) and what AMAP will do with them — and the **Stacked** / **Target channel** controls enable or disable themselves to match (see below).
+Select the project in the list to enable its settings. Settings are split into resource sliders (left) and model/data options (right). Each change is saved to the project's `conf.json` immediately. A small status line at the bottom of the panel summarises the detected input (how many images, their dimensionality and channel count) and what AMAP-APP will do with them — and the **Stacked** / **Target channel** controls enable or disable themselves to match (see below).
 
 <p align="center"><img src="res/images/configure_project.jpg" alt="Configure Project" width="500"/></p>
 <!-- IMAGE (NEEDS UPDATING): a current screenshot of the configuration panel. The existing res/images/configure_project.jpg is OUT OF DATE — it predates the value labels beneath each slider, the "Data-loader workers" slider, the "Model checkpoint" dropdown, and the "Use GPU" checkbox. Capture a fresh screenshot with a project selected and overwrite res/images/configure_project.jpg. -->
@@ -146,7 +147,7 @@ Select the project in the list to enable its settings. Settings are split into r
 * **Stacked** and **Target channel** — These two controls are **enabled only when they apply to your data**, based on the input AMAP detects when you select the project (see the status line described below):
     * **Mixed dimensionality**, or all images **2-D** → both disabled; AMAP handles the input automatically (a 2-D image is used directly; mixed inputs fall back to an automatic maximum projection).
     * All images **3-D** → both enabled. A 3-D input can be either a *z-stack* or a *multi-channel* image, so you choose: tick **Stacked** to maximum-project the stack, or leave it unticked to analyse a single channel chosen with **Target channel**.
-    * All images **4-D** → **Stacked** is forced on and locked (a 4-D input is always a multi-channel stack); AMAP maximum-projects the stack and then analyses the channel chosen with **Target channel**.
+    * All images **4-D** → **Stacked** is forced on and locked (a 4-D input is always a multi-channel stack); AMAP-APP maximum-projects the stack and then analyses the channel chosen with **Target channel**.
   When **Target channel** is active, its range is limited to the actual number of channels in your images, and it defaults to `0`.
 * **Old ROI algorithm (AMAP)** — Use the original AMAP ROI detection instead of the AMAP-APP method. Leave unchecked for the AMAP-APP algorithm.
 * **SD length analysis** — Adds slit-diaphragm (SD) length analysis to the morphometry output. Enabling it shows a confirmation dialog. **Important:** this feature may conflict with a patent filed after the AMAP paper was published. Users are solely responsible for ensuring compliance with all applicable intellectual-property regulations and legal requirements.

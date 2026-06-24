@@ -304,7 +304,7 @@ class MainWindow(QMainWindow):
 
         self.button_customize.setEnabled(True)
 
-        checkpoint = project_configs.get('model_checkpoint', 'cp_10940.pth')
+        checkpoint = project_configs.get('model_checkpoint', 'original.pth')
         idx = self.combo_checkpoint.findText(checkpoint)
         if idx >= 0:
             self.combo_checkpoint.setCurrentIndex(idx)
@@ -466,7 +466,7 @@ class MainWindow(QMainWindow):
             checkpoint_files = [f for f in os.listdir(checkpoint_dir) if f.endswith('.pth')]
             self.combo_checkpoint.addItems(checkpoint_files)
         if self.combo_checkpoint.count() == 0:
-            self.combo_checkpoint.addItem("cp_10940.pth")
+            self.combo_checkpoint.addItem("original.pth")
 
     # Changes the checkpoint configuration for the selected project
     def checkpoint_change(self, _text):
@@ -813,7 +813,7 @@ class MainWindow(QMainWindow):
             "is_old_roi": False,
             "does_include_sd": False,
             "use_gpu": True,
-            "model_checkpoint": "cp_10940.pth",
+            "model_checkpoint": "original.pth",
             "num_workers": suggested_workers(4, 2, self.max_workers)
         }
         self.save_project_configuration(f"{destination_directory}/conf.json", project_configuration)

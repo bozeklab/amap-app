@@ -143,7 +143,7 @@ Select the project in the list to enable its settings. Settings are split into r
 
 **Model and data options:**
 
-* **Model checkpoint** — Selects the trained model weights. AMAP-APP ships with `cp_10940.pth` (default) and an additional checkpoint trained for IgA Nephropathy, `cp_12940.pth`. Any `.pth` file placed in `res/model/` is offered in this list.
+* **Model checkpoint** — Selects the trained model weights. AMAP-APP ships with a default model and an IgA-nephropathy checkpoint, and any `.pth` file placed in `res/model/` is offered here (see [Model checkpoints](#model-checkpoints) below).
 * **Stacked** and **Target channel** — These two controls are **enabled only when they apply to your data**, based on the input AMAP-APP detects when you select the project (see the status line described below):
     * **Mixed dimensionality**, or all images **2-D** → both disabled; AMAP-APP handles the input automatically (a 2-D image is used directly; mixed inputs fall back to an automatic maximum projection).
     * All images **3-D** → both enabled. A 3-D input can be either a *z-stack* or a *multi-channel* image, so you choose: tick **Stacked** to maximum-project the stack, or leave it unticked to analyse a single channel chosen with **Target channel**.
@@ -152,7 +152,16 @@ Select the project in the list to enable its settings. Settings are split into r
 * **Old ROI algorithm (AMAP)** — Selects which region-of-interest (ROI) detector is used. Unchecked (default) uses the AMAP-APP ROI algorithm; checked uses the original AMAP method. The ROI is the area of the image treated as podocyte tissue, and it determines where the slit-diaphragm length density is measured (see [ROI and post-processing configuration](#roi-and-post-processing-configuration) below).
 * **SD length analysis** — Adds slit-diaphragm (SD) length analysis to the morphometry output. Enabling it shows a confirmation dialog. **Important:** this feature may conflict with a patent filed after the AMAP paper was published. Users are solely responsible for ensuring compliance with all applicable intellectual-property regulations and legal requirements.
 * **Use GPU** — When enabled and a CUDA-capable GPU is available, inference runs on the GPU; otherwise it falls back to the CPU. Disable to force CPU execution.
-* **Customize…** — Opens a dialog to view and adjust the ROI and post-processing parameters for the project. These are validated defaults; advanced users can change them (see [ROI and post-processing configuration](#roi-and-post-processing-configuration) below). The deep-learning model itself is **not** exposed here — to adapt the model, fine-tune it in the [AMAP repository](https://github.com/bozeklab/amap) and load the resulting weights with **Model checkpoint** above.
+* **Customize…** — Opens a dialog to view and adjust the ROI and post-processing parameters for the project. These are validated defaults; advanced users can change them (see [ROI and post-processing configuration](#roi-and-post-processing-configuration) below). The deep-learning model itself is **not** exposed here — to adapt the model, fine-tune it in the [AMAP repository](https://github.com/bozeklab/amap) and load the resulting weights via [Model checkpoints](#model-checkpoints) below.
+
+#### Model checkpoints
+
+A *checkpoint* is a set of trained network weights. AMAP-APP loads checkpoints from `res/model/` and lists every `.pth` file there in the **Model checkpoint** dropdown, so switching or adding a model is just a matter of copying a file — no code changes. Two checkpoints ship with the application:
+
+* **`original.pth`** *(default)* — the original AMAP model, trained as described in the [AMAP publication](https://www.kidney-international.org/article/S0085-2538(23)00180-1/fulltext). Use this for general podocyte foot-process segmentation.
+* **`IgA.pth`** — a checkpoint fine-tuned for IgA nephropathy ([medRxiv 2026](https://www.medrxiv.org/content/10.64898/2026.03.30.26349728v1.full)).
+
+The IgA checkpoint is included as a **proof of concept**: the deep-learning model in AMAP-APP is intentionally fixed for reproducibility, but it is not a dead end. Users who need a model adapted to a different tissue, stain, or pathology can fine-tune or train one in the [AMAP repository](https://github.com/bozeklab/amap) and then use it in AMAP-APP simply by copying the resulting `.pth` file into `res/model/` and selecting it from the **Model checkpoint** dropdown.
 
 #### ROI and post-processing configuration
 

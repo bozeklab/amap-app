@@ -25,7 +25,7 @@ The full list is in [requirements.txt](./requirements.txt); the major dependenci
 
 * **Minimum:** 8 GB RAM, 4 CPU cores.
 * **Recommended:** 16 GB RAM, 8 CPU cores.
-* **Optional:** a CUDA-capable NVIDIA GPU. Inference uses it automatically when *Use GPU* is enabled and a compatible GPU is detected; otherwise AMAP-APP runs on the CPU. The provided requirements install the CPU build of PyTorch; to use a GPU, install a matching CUDA build of `torch` from [pytorch.org](https://pytorch.org/) into the same environment.
+* **Optional:** a CUDA-capable NVIDIA GPU. Inference uses it automatically when *Use GPU* is enabled and a compatible GPU is detected; otherwise AMAP-APP runs on the CPU. The requirements install the CUDA (GPU) build of PyTorch by default on Linux and Windows; on a machine without an NVIDIA GPU it still runs on the CPU. For a smaller, CPU-only install, install `torch` separately from the CPU index: `pip install torch --index-url https://download.pytorch.org/whl/cpu`. (On macOS, where there is no CUDA build, the standard PyTorch build is installed.)
 
 ## Installation
 
@@ -67,25 +67,16 @@ Set-ExecutionPolicy Unrestricted -Scope Process
 .\venv\Scripts\Activate
 ```
 
-Install the requirements:
-
-* On Linux/Mac
+Install the requirements (the same file works on Linux, Windows and macOS):
 
 ```bash
 pip install -r requirements.txt
 ```
 
-* On Windows
-
-```powershell
-pip install -r requirements-win.txt
-```
-
-> **Other Python versions:** `requirements.txt` and `requirements-win.txt` pin the exact
-> dependency versions AMAP-APP is verified with on **Python 3.13**. AMAP-APP is not tested on
-> other Python versions, but it relies on no version-specific APIs and should run on any
-> reasonably recent Python 3. To try it there, install the unpinned dependencies instead and
-> let pip pick compatible versions:
+> **Other Python versions:** `requirements.txt` pins the exact dependency versions AMAP-APP is
+> verified with on **Python 3.13**. AMAP-APP is not tested on other Python versions, but it
+> relies on no version-specific APIs and should run on any reasonably recent Python 3. To try it
+> there, install the unpinned dependencies instead and let pip pick compatible versions:
 >
 > ```bash
 > pip install -r requirements-unlocked.txt

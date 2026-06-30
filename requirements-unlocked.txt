@@ -1,19 +1,23 @@
-# AMAP-APP dependencies — unlocked / unpinned.
+# AMAP-APP dependencies — unlocked / unpinned, cross-platform (Linux, Windows, macOS).
 #
-# Use this file to install AMAP-APP on a Python version other than 3.13. The app
-# is developed and verified on Python 3.13 (see requirements.txt / requirements-win.txt
-# for the exact, locked versions); it is NOT tested on other versions, but it uses
-# no version-specific APIs and should run on any reasonably recent Python 3, letting
-# pip pick the newest compatible release of each package.
+# Use this file to install AMAP-APP on a Python version other than 3.13. The app is
+# developed and verified on Python 3.13 (see requirements.txt for the exact, locked
+# versions); it is NOT tested on other versions, but it uses no version-specific APIs
+# and should run on any reasonably recent Python 3, letting pip pick the newest
+# compatible release of each package.
 #
-# Installs the CPU build of PyTorch. A GPU is optional: to enable CUDA acceleration,
-# install a matching CUDA build of torch from https://pytorch.org/.
+# PyTorch: the CUDA (GPU) build is installed by default on Linux and Windows (macOS
+# has no CUDA builds and uses the standard PyPI build). On a machine without an NVIDIA
+# GPU the CUDA build still runs on the CPU; for a smaller CPU-only install, get torch
+# from https://download.pytorch.org/whl/cpu instead.
 #
 #   pip install -r requirements-unlocked.txt
---extra-index-url https://download.pytorch.org/whl/cpu
+--extra-index-url https://download.pytorch.org/whl/cu130
 numpy
-opencv-python-headless; platform_system != "Windows"
-opencv-python; platform_system == "Windows"
+# OpenCV: headless on Linux/macOS (avoids a Qt-plugin clash with PySide6),
+# the full build on Windows.
+opencv-python-headless; sys_platform != 'win32'
+opencv-python; sys_platform == 'win32'
 pandas
 Pillow
 psutil

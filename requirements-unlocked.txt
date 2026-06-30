@@ -1,0 +1,26 @@
+# AMAP-APP dependencies — unlocked / unpinned.
+#
+# Use this file to install AMAP-APP on a Python version other than 3.13. The app
+# is developed and verified on Python 3.13 (see requirements.txt / requirements-win.txt
+# for the exact, locked versions); it is NOT tested on other versions, but it uses
+# no version-specific APIs and should run on any reasonably recent Python 3, letting
+# pip pick the newest compatible release of each package.
+#
+# Installs the CPU build of PyTorch. A GPU is optional: to enable CUDA acceleration,
+# install a matching CUDA build of torch from https://pytorch.org/.
+#
+#   pip install -r requirements-unlocked.txt
+--extra-index-url https://download.pytorch.org/whl/cpu
+numpy
+opencv-python-headless; platform_system != "Windows"
+opencv-python; platform_system == "Windows"
+pandas
+Pillow
+psutil
+PySide6
+PySide6-Addons
+PySide6-Essentials
+scikit-image
+scipy
+tifffile
+torch

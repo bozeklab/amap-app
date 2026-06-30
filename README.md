@@ -7,7 +7,7 @@ AMAP-APP is a desktop application that uses deep learning to perform [segmentati
 
 This application is a reimplementation of the [original research](https://github.com/bozeklab/amap) with modifications to the instance-segmentation algorithm aimed at improving compute efficiency. Instead of the original pixel-embedding clustering, AMAP-APP derives instances with PyTorch operations and a Connected Component Labeling (CCL) algorithm, achieving comparable results.
 
-AMAP-APP is cross-platform, implemented in Python 3.9, and primarily tested on Linux (with lighter testing on Windows and Mac). Minor visual inconsistencies may appear between platforms but do not affect functionality.
+AMAP-APP is cross-platform, implemented in Python 3.13, and primarily tested on Linux (with lighter testing on Windows and Mac). Minor visual inconsistencies may appear between platforms but do not affect functionality.
 
 ## Requirements
 
@@ -25,13 +25,13 @@ The full list is in [requirements.txt](./requirements.txt); the major dependenci
 
 * **Minimum:** 8 GB RAM, 4 CPU cores.
 * **Recommended:** 16 GB RAM, 8 CPU cores.
-* **Optional:** a CUDA-capable NVIDIA GPU. Inference uses it automatically when *Use GPU* is enabled and a compatible GPU is detected; otherwise AMAP-APP runs on the CPU.
+* **Optional:** a CUDA-capable NVIDIA GPU. Inference uses it automatically when *Use GPU* is enabled and a compatible GPU is detected; otherwise AMAP-APP runs on the CPU. The provided requirements install the CPU build of PyTorch; to use a GPU, install a matching CUDA build of `torch` from [pytorch.org](https://pytorch.org/) into the same environment.
 
 ## Installation
 
 1. Make sure the following are installed:
     * git
-    * Python 3.9
+    * Python 3.13 (the version AMAP-APP is developed and verified on; see the note on other versions below)
 
 2. Clone the repository
 ```bash
@@ -80,6 +80,16 @@ pip install -r requirements.txt
 ```powershell
 pip install -r requirements-win.txt
 ```
+
+> **Other Python versions:** `requirements.txt` and `requirements-win.txt` pin the exact
+> dependency versions AMAP-APP is verified with on **Python 3.13**. AMAP-APP is not tested on
+> other Python versions, but it relies on no version-specific APIs and should run on any
+> reasonably recent Python 3. To try it there, install the unpinned dependencies instead and
+> let pip pick compatible versions:
+>
+> ```bash
+> pip install -r requirements-unlocked.txt
+> ```
 
 ## Update
 

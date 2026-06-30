@@ -442,8 +442,8 @@ class MainWindow(QMainWindow):
             self, '',
             f'All results for "{project_name}" (segmentation, morphometry and intermediate '
             f'files) will be deleted so the project can be re-run.\n\nAre you sure?',
-            questionBox.Yes | questionBox.No)
-        if answer != questionBox.Yes:
+            QMessageBox.Yes | QMessageBox.No)
+        if answer != QMessageBox.Yes:
             return
 
         project_configs_path = f'./{PROJECT_DIR}/{project_name}/conf.json'
@@ -508,7 +508,7 @@ class MainWindow(QMainWindow):
             questionBox.setDefaultButton(QMessageBox.No)
             answer = questionBox.exec()
 
-            if answer == questionBox.No:
+            if answer == QMessageBox.No:
                 # User declined, revert the checkbox to unchecked state
                 self.check_include_sd.setChecked(False)
                 return
@@ -840,8 +840,8 @@ class MainWindow(QMainWindow):
         answer = questionBox.question(self,
                                       '',
                                       f'The project "{project_name}" will be removed."\nAre you sure?',
-                                      questionBox.Yes | questionBox.No)
-        if answer == questionBox.Yes:
+                                      QMessageBox.Yes | QMessageBox.No)
+        if answer == QMessageBox.Yes:
             def delete_project_dir(_project_name):
                 project_path = f"./{PROJECT_DIR}/{_project_name}/"
                 if os.path.exists(project_path):

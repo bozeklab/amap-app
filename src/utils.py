@@ -447,7 +447,15 @@ def open_dir_in_browser(_path):
     if sys.platform == 'win32':
         os.startfile(_path)
     elif sys.platform == 'darwin':
-        subprocess.call(['open', _path])
+        subprocess.Popen(['open', _path])
     else:
-        subprocess.call(['xdg-open', _path])
+        # Launch the file manager without blocking the GUI thread, silence its
+        # output, and strip our virtualenv variables so its own Python plugins
+        # (e.g. nautilus-python) don't try to import from our venv.
+        env = os.environ.copy()
+        for var in ('VIRTUAL_ENV', 'PYTHONHOME', 'PYTHONPATH'):
+            env.pop(var, None)
+        subprocess.Popen(['xdg-open', _path], env=env,
+                         stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+                         start_new_session=True)
 
